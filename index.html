@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hope's Corner - Shower & Supplies Adventure</title>
+    <title>Hope's Corner - Shower & Supplies game</title>
     <link rel="icon" type="image/png"
         href="https://images.squarespace-cdn.com/content/5622cd82e4b0501d40689558/2aedb400-89b8-4f93-856f-cd2c7d5385e4/Hopes_Corner_Logo_Green.png?format=1500w&content-type=image%2Fpng">
     <meta name="description"
@@ -32,7 +32,8 @@
 
         body {
             font-family: 'Nunito', sans-serif;
-            background-color: var(--bg-main);
+            background: linear-gradient(135deg, #e0f7fa 0%, #f0f9ff 100%);
+            min-height: 100vh;
         }
 
         .game-wrapper {
@@ -41,7 +42,6 @@
             height: 100%;
         }
 
-        /* Mobile First Layout */
         .game-container {
             display: flex;
             flex-direction: column;
@@ -51,7 +51,6 @@
             padding: 0.5rem;
         }
 
-        /* Desktop Layout */
         @media (min-width: 1024px) {
             .game-container {
                 display: grid;
@@ -74,17 +73,24 @@
             gap: 1rem;
             padding: 1rem;
             background-color: var(--box-bg);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px 0 rgba(6, 95, 70, 0.08);
             border-bottom: 3px solid var(--primary);
         }
 
         .station {
             background-color: var(--box-bg);
-            border-radius: 0.75rem;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 6px 24px 0 rgba(14, 165, 233, 0.08), 0 1.5px 6px 0 rgba(6, 95, 70, 0.06);
+            padding: 1.2rem 1rem 1.5rem 1rem;
             display: flex;
             flex-direction: column;
+            border: 1.5px solid #e0e7ef;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .station:hover {
+            box-shadow: 0 8px 32px 0 rgba(14, 165, 233, 0.16), 0 2px 8px 0 rgba(6, 95, 70, 0.10);
+            transform: translateY(-2px) scale(1.01);
         }
 
         .station-header {
@@ -99,21 +105,33 @@
 
         .station-icon {
             flex-shrink: 0;
-            width: 28px;
-            height: 28px;
-            background-color: var(--primary);
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            font-size: 1.2rem;
-            margin-right: 0.5rem;
+            font-size: 1.3rem;
+            margin-right: 0.7rem;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.10);
         }
 
         .guest,
         .supply-item {
             cursor: grab;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            border: 1.5px solid #d1d5db;
+            box-shadow: 0 2px 8px 0 rgba(14, 165, 233, 0.08);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .guest:hover,
+        .supply-item:hover {
+            box-shadow: 0 4px 16px 0 rgba(14, 165, 233, 0.16);
+            transform: scale(1.03);
         }
 
         .guest.dragging,
@@ -145,16 +163,18 @@
         }
 
         .progress-bar {
-            background-color: #e5e7eb;
+            background: linear-gradient(90deg, #e0e7ef 0%, #f0f9ff 100%);
             border-radius: 9999px;
             overflow: hidden;
             width: 100%;
             height: 0.75rem;
+            box-shadow: 0 1px 4px 0 rgba(14, 165, 233, 0.08);
         }
 
         .progress-bar-fill {
             height: 100%;
             transition: width 0.1s linear;
+            box-shadow: 0 1px 4px 0 rgba(16, 185, 129, 0.10);
         }
 
         #modal-overlay {
@@ -193,14 +213,16 @@
             font-weight: bold;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(.4,2,.3,1);
             border: none;
             cursor: pointer;
+            box-shadow: 0 2px 8px 0 rgba(16, 185, 129, 0.10);
         }
 
         .btn-primary:hover:not(:disabled) {
-            box-shadow: 0 4px 15px rgba(6, 95, 70, 0.3);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 24px 0 rgba(16, 185, 129, 0.18);
+            transform: scale(1.04);
+            filter: brightness(1.08) drop-shadow(0 0 6px #10b98144);
         }
 
         .btn-primary:disabled {
@@ -223,10 +245,10 @@
         .supply-item {
             padding: 0.25rem;
             font-size: 1.5rem;
-            border-radius: 0.25rem;
-            border: 1px solid #d1d5db;
-            background-color: white;
-            line-height: 1.
+            border-radius: 0.75rem;
+            border: 1.5px solid #d1d5db;
+            background-color: #fff;
+            line-height: 1.2;
         }
 
         .supply-bins-grid {
@@ -237,6 +259,16 @@
 
         .item-request-bubble {
             cursor: default;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            border: 1.5px solid #d1d5db;
+            box-shadow: 0 2px 8px 0 rgba(14, 165, 233, 0.08);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .item-request-bubble:hover {
+            box-shadow: 0 4px 16px 0 rgba(14, 165, 233, 0.16);
+            transform: scale(1.01);
         }
 
         .requested-item {
@@ -246,6 +278,7 @@
 
         .requested-item:hover {
             transform: scale(1.2);
+            filter: brightness(1.2);
         }
 
         .requested-item.fulfilled {
@@ -254,7 +287,6 @@
         }
 
         @keyframes shake {
-
             0%,
             100% {
                 transform: translateX(0);
@@ -269,6 +301,13 @@
             }
         }
     </style>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CP5WLN65B2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-CP5WLN65B2');
+    </script>
 </head>
 
 <body>
@@ -277,7 +316,7 @@
             <div class="flex items-center gap-2 md:gap-3">
                 <img src="https://images.squarespace-cdn.com/content/5622cd82e4b0501d40689558/2aedb400-89b8-4f93-856f-cd2c7d5385e4/Hopes_Corner_Logo_Green.png?format=1500w&content-type=image%2Fpng"
                     alt="Hope's Corner Logo" class="h-10 md:h-12">
-                <h1 class="text-lg md:text-2xl font-bold" style="color: var(--primary-dark);">Shower Adventure</h1>
+                <h1 class="text-lg md:text-2xl font-bold" style="color: var(--primary-dark);">Shower & Supplies</h1>
             </div>
             <div class="text-center flex-grow order-3 w-full lg:order-2 lg:w-auto">
                 <h2 class="text-sm md:text-base font-semibold" style="color: var(--primary-dark);">Daily Update</h2>
@@ -335,7 +374,7 @@
 
     <div id="modal-overlay">
         <div id="start-modal" class="modal">
-            <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Shower & Supplies Adventure</h1>
+            <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Shower & Supplies</h1>
             <p class="text-gray-600 mb-4">Each day brings a new challenge. Adapt and serve the community!</p>
             <div class="text-left bg-blue-50 p-3 rounded-lg border border-blue-200 my-4">
                 <h2 class="font-bold text-lg text-blue-800 mb-2">How to Play:</h2>
@@ -443,6 +482,7 @@
                 gameState.timers.guestSpawner = setTimeout(spawnGuest, 1200);
                 gameState.timers.gameLoop = setInterval(gameLoop, 100);
                 DOMElements.acceptSupplyDropBtn.disabled = false;
+                if (typeof gtag === 'function') gtag('event', 'game_start');
             }
 
             function endGame(reason) {
@@ -456,6 +496,7 @@
                 DOMElements.modalOverlay.classList.remove('hidden');
                 DOMElements.gameOverModal.classList.remove('hidden');
                 DOMElements.startModal.classList.add('hidden');
+                if (typeof gtag === 'function') gtag('event', 'game_over', { reason: reason });
             }
 
             function gameLoop() {
@@ -515,6 +556,7 @@
                 gameState.upsetGuests++;
                 gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + 15);
                 updateGuestUI(guestId, true); updateTopBarUI();
+                if (typeof gtag === 'function') gtag('event', 'guest_upset');
             }
 
             function assignGuestToShower(guestId, showerId) {
@@ -531,6 +573,7 @@
                 if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
                 playSound('success');
                 showComboEffect();
+                if (typeof gtag === 'function') gtag('event', 'assign_guest_to_shower');
             }
 
             function finishShowering(showerId) {
@@ -558,6 +601,7 @@
                     shower.status = 'available'; updateShowersUI();
                 });
                 updateShowersUI();
+                if (typeof gtag === 'function') gtag('event', 'clean_shower');
             }
 
             function acceptSupplyDrop() {
@@ -586,6 +630,7 @@
                     if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
                     playSound('success');
                     showComboEffect();
+                    if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'correct', type: item.type });
                 } else {
                     gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + 5);
                     const binEl = DOMElements.supplyBins.querySelector(`.supply-bin[data-type="${binType}"]`);
@@ -593,6 +638,7 @@
                     setTimeout(() => binEl.classList.remove('deny'), 400);
                     gameState.combo = 0;
                     playSound('fail');
+                    if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'incorrect', type: item.type });
                 }
                 updateSupplyDropUI(); updateSupplyBinsUI(); updateTopBarUI();
             }
@@ -636,6 +682,7 @@
                     } else {
                         updateGuestUI(guestId);
                     }
+                    if (typeof gtag === 'function') gtag('event', 'fulfill_request', { item: itemType });
                 } else {
                     const requestBubble = document.getElementById(guestId);
                     if (requestBubble) requestBubble.classList.add('deny');
@@ -662,16 +709,21 @@
                 if (event.dataTransfer) event.dataTransfer.setData('text/plain', id);
                 setTimeout(() => event.target.classList.add('dragging'), 0);
             }
+
             function handleDragEnd(event) {
                 if (gameState.dragged.element) gameState.dragged.element.classList.remove('dragging');
                 document.querySelectorAll('.droppable').forEach(el => el.classList.remove('droppable'));
                 gameState.dragged = { type: null, id: null, element: null };
             }
+
             function handleDragOver(event) { event.preventDefault(); }
+
             function handleDragEnter(event, validDropType, isAvailable) {
                 if (gameState.dragged.type === validDropType && isAvailable) event.currentTarget.classList.add('droppable');
             }
+
             function handleDragLeave(event) { event.currentTarget.classList.remove('droppable'); }
+
             function handleDrop(event, dropZoneType, dropZoneId) {
                 event.preventDefault();
                 event.currentTarget.classList.remove('droppable');
@@ -699,7 +751,8 @@
                 if (guest.status === 'waiting') {
                     parentEl = DOMElements.guestQueue; className += ' guest';
                     newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]}</span></div>
-                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>`;
+                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>
+                            <button class='btn-primary mt-2 w-full block lg:hidden move-to-shower-btn' style='font-size:0.9rem;padding:0.3rem 0.5rem;'>Move to Shower</button>`;
                 } else if (guest.status === 'requesting') {
                     parentEl = DOMElements.requestsArea; className += ' item-request-bubble';
                     const requestIcons = guest.requests.map(r => `<span data-type="${r.type}" class="requested-item text-2xl ${r.fulfilled ? 'fulfilled' : ''}">${ITEM_TYPES[r.type].emoji}</span>`).join('');
@@ -723,6 +776,15 @@
                     }
                 }
                 element.className = className; element.innerHTML = newHTML;
+                if (guest.status === 'waiting') {
+                    const btn = element.querySelector('.move-to-shower-btn');
+                    if (btn) {
+                        btn.onclick = function() {
+                            const available = gameState.showers.find(s => s.status === 'available');
+                            if (available) assignGuestToShower(guestId, available.id);
+                        };
+                    }
+                }
             }
 
             function updateTopBarUI() {
@@ -796,6 +858,65 @@
                 });
             }
 
+            function addTouchDnD() {
+                DOMElements.guestQueue.addEventListener('touchstart', function(e) {
+                    const guestEl = e.target.closest('.guest');
+                    if (!guestEl) return;
+                    guestEl.classList.add('dragging');
+                    let moveHandler = function(ev) {
+                        let touch = ev.touches[0];
+                        let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        document.querySelectorAll('.shower-stall').forEach(stall => stall.classList.remove('droppable'));
+                        if (el && el.classList.contains('shower-stall') && el.classList.contains('bg-blue-50')) {
+                            el.classList.add('droppable');
+                        }
+                    };
+                    let endHandler = function(ev) {
+                        guestEl.classList.remove('dragging');
+                        document.querySelectorAll('.shower-stall').forEach(stall => stall.classList.remove('droppable'));
+                        let touch = (ev.changedTouches||[])[0];
+                        if (touch) {
+                            let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (el && el.classList.contains('shower-stall') && el.classList.contains('bg-blue-50')) {
+                                assignGuestToShower(guestEl.id, el.id);
+                            }
+                        }
+                        document.removeEventListener('touchmove', moveHandler);
+                        document.removeEventListener('touchend', endHandler);
+                    };
+                    document.addEventListener('touchmove', moveHandler);
+                    document.addEventListener('touchend', endHandler);
+                });
+                DOMElements.supplyDropArea.addEventListener('touchstart', function(e) {
+                    const supplyEl = e.target.closest('.supply-item');
+                    if (!supplyEl) return;
+                    supplyEl.classList.add('dragging');
+                    let moveHandler = function(ev) {
+                        let touch = ev.touches[0];
+                        let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        document.querySelectorAll('.supply-bin').forEach(bin => bin.classList.remove('droppable'));
+                        if (el && el.classList.contains('supply-bin')) {
+                            el.classList.add('droppable');
+                        }
+                    };
+                    let endHandler = function(ev) {
+                        supplyEl.classList.remove('dragging');
+                        document.querySelectorAll('.supply-bin').forEach(bin => bin.classList.remove('droppable'));
+                        let touch = (ev.changedTouches||[])[0];
+                        if (touch) {
+                            let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (el && el.classList.contains('supply-bin')) {
+                                sortSupplyItem(supplyEl.id, el.dataset.type);
+                            }
+                        }
+                        document.removeEventListener('touchmove', moveHandler);
+                        document.removeEventListener('touchend', endHandler);
+                    };
+                    document.addEventListener('touchmove', moveHandler);
+                    document.addEventListener('touchend', endHandler);
+                });
+            }
+
             DOMElements.startGameBtn.addEventListener('click', startGame);
             DOMElements.restartGameBtn.addEventListener('click', startGame);
             DOMElements.acceptSupplyDropBtn.addEventListener('click', acceptSupplyDrop);
@@ -811,6 +932,7 @@
             });
 
             initializeGameState();
+            addTouchDnD();
         });
     </script>
 </body>

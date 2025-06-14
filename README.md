@@ -1,10 +1,10 @@
-# Shower & Supplies Adventure
+# Shower & Supplies Game
 
-A web-based game inspired by the real-life operations of Hope's Corner, where you manage a shower and supply station for guests in need. Adapt to daily events, keep stress low, and serve as many guests as possible!
+A web-based game inspired by the real-life operations of Hope's Corner, where you manage a shower and supplies for guests in need. Adapt to daily events, keep stress low, and serve as many guests as possible!
 
 ## Gameplay
 
-- **Accept Supply Drops:** Click "Accept Supply Drop" to receive new items, then drag them to the correct supply bins.
+- **Accept Supply Drops:** Click "Accept Donations" to receive new items, then drag them to the correct supply bins.
 - **Manage Guests:** Drag waiting guests (😊) to available shower stalls.
 - **Clean Showers:** Click dirty showers (🧹) to clean them and make them available again.
 - **Fulfill Requests:** After showering, guests will request specific items. Click the requested item icon to give it to them (if you have it in stock).
@@ -30,7 +30,6 @@ A web-based game inspired by the real-life operations of Hope's Corner, where yo
 
 - Game design and code: Karan
 - Inspired by the work of Hope's Corner
-- Icons and sounds from open source resources
 
 ---
 
