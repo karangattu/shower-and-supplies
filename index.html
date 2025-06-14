@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hope's Corner - Shower & Supplies Adventure</title>
+    <link rel="icon" type="image/png"
+        href="https://images.squarespace-cdn.com/content/5622cd82e4b0501d40689558/2aedb400-89b8-4f93-856f-cd2c7d5385e4/Hopes_Corner_Logo_Green.png?format=1500w&content-type=image%2Fpng">
+    <meta name="description"
+        content="Help Hope's Corner provide warm showers and essential supplies to the community through a dynamic sorting adventure.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #065f46;
+            --primary-light: #10b981;
+            --primary-dark: #04433d;
+            --accent: #0ea5e9;
+            --accent-light: #38bdf8;
+            --bg-main: #f0f9ff;
+            --box-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-light: #4b5563;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--bg-main);
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Mobile First Layout */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+
+        /* Desktop Layout */
+        @media (min-width: 1024px) {
+            .game-container {
+                display: grid;
+                grid-template-columns: 1fr 1.5fr 1fr;
+                grid-template-rows: 1fr;
+                overflow: hidden;
+                padding: 1rem;
+            }
+
+            .station {
+                overflow-y: auto;
+            }
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--box-bg);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .station {
+            background-color: var(--box-bg);
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .station-header {
+            display: flex;
+            align-items: center;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+
+        .station-icon {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+
+        .guest,
+        .supply-item {
+            cursor: grab;
+        }
+
+        .guest.dragging,
+        .supply-item.dragging {
+            opacity: 0.4;
+            transform: scale(0.9);
+            cursor: grabbing;
+        }
+
+        .shower-stall.droppable,
+        .supply-bin.droppable {
+            border-style: dashed !important;
+            border-color: var(--primary) !important;
+            background-color: #d1fae5 !important;
+            transform: scale(1.05);
+        }
+
+        .supply-bin.deny,
+        .item-request-bubble.deny {
+            animation: shake 0.4s;
+        }
+
+        .shower-stall.dirty {
+            cursor: pointer;
+        }
+
+        .shower-stall.dirty:hover {
+            background-color: #fecaca;
+        }
+
+        .progress-bar {
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+            width: 100%;
+            height: 0.75rem;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            transition: width 0.1s linear;
+        }
+
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        #modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal {
+            background: var(--box-bg);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            color: white;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            box-shadow: 0 4px 15px rgba(6, 95, 70, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #supply-drop-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            min-height: 50px;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+        }
+
+        .supply-item {
+            padding: 0.25rem;
+            font-size: 1.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            line-height: 1.
+        }
+
+        .supply-bins-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .item-request-bubble {
+            cursor: default;
+        }
+
+        .requested-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .requested-item:hover {
+            transform: scale(1.2);
+        }
+
+        .requested-item.fulfilled {
+            opacity: 0.3;
+            filter: grayscale(1);
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-wrapper">
+        <header class="header">
+            <div class="flex items-center gap-2 md:gap-3">
+                <img src="https://images.squarespace-cdn.com/content/5622cd82e4b0501d40689558/2aedb400-89b8-4f93-856f-cd2c7d5385e4/Hopes_Corner_Logo_Green.png?format=1500w&content-type=image%2Fpng"
+                    alt="Hope's Corner Logo" class="h-10 md:h-12">
+                <h1 class="text-lg md:text-2xl font-bold" style="color: var(--primary-dark);">Shower Adventure</h1>
+            </div>
+            <div class="text-center flex-grow order-3 w-full lg:order-2 lg:w-auto">
+                <h2 class="text-sm md:text-base font-semibold" style="color: var(--primary-dark);">Daily Update</h2>
+                <p id="daily-event-text"
+                    class="text-xs md:text-sm italic min-h-[40px] flex items-center justify-center px-2"></p>
+            </div>
+            <div class="flex items-center justify-center flex-wrap gap-x-3 md:gap-x-4 gap-y-2 order-2 lg:order-3">
+                <div class="text-center"><span class="text-xs md:text-sm" style="color: var(--text-light);">Score</span>
+                    <p id="score" class="text-base md:text-xl font-semibold" style="color: var(--primary);">0</p>
+                </div>
+                <div class="text-center"><span class="text-xs md:text-sm" style="color: var(--text-light);">Day</span>
+                    <p id="day" class="text-base md:text-xl font-semibold" style="color: var(--text-main);">1</p>
+                </div>
+                <div class="w-20 md:w-32 text-center"><span class="text-xs md:text-sm"
+                        style="color: var(--text-light);">Stress</span>
+                    <div class="progress-bar h-2 mt-1">
+                        <div id="stress-bar" class="progress-bar-fill bg-red-500" style="width: 0%;"></div>
+                    </div>
+                </div>
+                <div class="text-center"><span class="text-xs md:text-sm" style="color: var(--text-light);">Upset</span>
+                    <p id="upset-guests-display" class="text-base md:text-xl font-semibold text-red-600">0 / 5</p>
+                </div>
+            </div>
+        </header>
+
+        <div id="game-container" class="game-container">
+            <div id="guest-station" class="station">
+                <div class="station-header"><span class="station-icon">👋</span>
+                    <h2 class="text-lg font-semibold">Guest Area</h2>
+                </div>
+                <h3 class="font-semibold text-center mb-2 text-gray-600">Waiting for Shower</h3>
+                <div id="guest-queue" class="space-y-2 mb-4"></div>
+                <h3 class="font-semibold text-center mb-2 text-gray-600">Waiting for Items</h3>
+                <div id="requests-area" class="space-y-2 flex-grow"></div>
+            </div>
+
+            <div id="shower-station" class="station">
+                <div class="station-header"><span class="station-icon">🚿</span>
+                    <h2 class="text-lg font-semibold">Shower Stalls</h2>
+                </div>
+                <div id="shower-stalls-area" class="grid grid-cols-2 gap-4 flex-grow"></div>
+            </div>
+
+            <div id="supply-station" class="station">
+                <div class="station-header"><span class="station-icon">🎁</span>
+                    <h2 class="text-lg font-semibold">Supplies</h2>
+                </div>
+                <button id="accept-supply-drop" class="btn-primary w-full mb-2 flex-shrink-0">Accept Supply
+                    Drop</button>
+                <p class="text-xs text-center text-gray-500 mb-2">Drag items from here to the bins below</p>
+                <div id="supply-drop-area" class="mb-4 flex-shrink-0"></div>
+                <div id="supply-bins" class="supply-bins-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-overlay">
+        <div id="start-modal" class="modal">
+            <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Shower & Supplies Adventure</h1>
+            <p class="text-gray-600 mb-4">Each day brings a new challenge. Adapt and serve the community!</p>
+            <div class="text-left bg-blue-50 p-3 rounded-lg border border-blue-200 my-4">
+                <h2 class="font-bold text-lg text-blue-800 mb-2">How to Play:</h2>
+                <ul class="list-disc pl-5 space-y-2 text-sm">
+                    <li>Click <b class="text-blue-600">"Accept Supply Drop"</b> then drag supplies to the correct bins
+                        below.</li>
+                    <li><b class="text-green-600">Drag waiting guests</b> (😊) to an available shower.</li>
+                    <li><b class="text-red-600">Click dirty showers</b> (🧹) to clean them.</li>
+                    <li>After showering, guests will ask for specific items. <b class="text-purple-600">Click the item's
+                            icon</b> on their request to give it to them.</li>
+                    <li>Serve guests before they become angry (😠)! Watch the <b class="text-yellow-600">Daily
+                            Update</b> for new challenges.</li>
+                </ul>
+            </div>
+            <button id="start-game-btn" class="btn-primary w-full">Start Day 1</button>
+        </div>
+        <div id="game-over-modal" class="modal hidden">
+            <h1 class="text-3xl font-bold mb-2 text-red-700">Day Over!</h1>
+            <p id="game-over-reason" class="text-lg mb-4"></p>
+            <p class="text-lg">Final Score: <span id="final-score" class="font-bold text-2xl"
+                    style="color: var(--primary);">0</span></p><button id="restart-game-btn"
+                class="btn-primary w-full mt-4">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const DOMElements = {
+                score: document.getElementById('score'), day: document.getElementById('day'),
+                stressBar: document.getElementById('stress-bar'), upsetGuests: document.getElementById('upset-guests-display'),
+                guestQueue: document.getElementById('guest-queue'), showerStallsArea: document.getElementById('shower-stalls-area'),
+                requestsArea: document.getElementById('requests-area'), dailyEventText: document.getElementById('daily-event-text'),
+                modalOverlay: document.getElementById('modal-overlay'), startModal: document.getElementById('start-modal'),
+                gameOverModal: document.getElementById('game-over-modal'), finalScore: document.getElementById('final-score'),
+                gameOverReason: document.getElementById('game-over-reason'), startGameBtn: document.getElementById('start-game-btn'),
+                restartGameBtn: document.getElementById('restart-game-btn'), acceptSupplyDropBtn: document.getElementById('accept-supply-drop'),
+                supplyDropArea: document.getElementById('supply-drop-area'), supplyBins: document.getElementById('supply-bins'),
+            };
+
+            let gameState = {};
+            const CONFIG = {
+                MAX_STRESS: 100, MAX_UPSET_GUESTS: 5, NUM_SHOWER_STALLS: 2, BASE_SHOWER_TIME: 10000,
+                BASE_CLEAN_TIME: 6000, BASE_GUEST_PATIENCE: 25000, POINTS_PER_SHOWER: 50,
+                POINTS_PER_ITEM: 25, SUPPLY_DROP_SIZE: 4
+            };
+            const ITEM_TYPES = {
+                shirts: { emoji: '👕', name: 'Shirt' }, pants: { emoji: '👖', name: 'Pants' },
+                jackets: { emoji: '🧥', name: 'Jacket' }, toiletries: { emoji: '🧼', name: 'Toiletries' },
+                sleepingBags: { emoji: '🛌', name: 'Sleeping Bag' }
+            };
+            const DAILY_EVENTS = [
+                { id: "calm_day", text: "A calm, quiet day. Business as usual.", effect: {} },
+                { id: "rainy_day", text: "🌧️ Rainy day rush! Guests arrive faster.", effect: { guestArrivalSpeed: 1.5 } },
+                { id: "volunteer_help", text: "✨ Extra volunteers are helping clean today! Cleaning is much faster.", effect: { cleaningSpeed: 2 } },
+                { id: "slow_heater", text: "🔧 The water heater is slow today. Showers take longer.", effect: { showerSpeed: 0.7 } },
+                { id: "jacket_demand", text: "🧥 A cold front is moving in! Extra points for giving jackets.", effect: { itemBonus: { type: 'jackets', points: 30 } } },
+                { id: "supply_shortage", text: "🚚 A delivery is delayed. No new sleeping bag drops today.", effect: { supplyShortage: 'sleepingBags' } },
+                { id: "impatient_crowd", text: "😠 It's a hot day and guests are impatient.", effect: { guestPatience: 0.75 } }
+            ];
+
+            function initializeGameState() {
+                gameState = {
+                    score: 0, day: 1, stress: 0, upsetGuests: 0, gameRunning: false,
+                    nextIds: { guest: 0, supply: 0 },
+                    guests: [], showers: [], suppliesToSort: [],
+                    inventory: { shirts: 2, pants: 2, jackets: 1, toiletries: 3, sleepingBags: 1 },
+                    currentEvent: {},
+                    timers: { gameLoop: null, guestSpawner: null, patience: [] },
+                    dragged: { type: null, id: null, element: null },
+                    combo: 0, maxCombo: 0
+                };
+                for (let i = 0; i < CONFIG.NUM_SHOWER_STALLS; i++) {
+                    gameState.showers.push({ id: `shower-${i}`, status: 'available', timer: null, progress: 0 });
+                }
+            }
+
+            function playSound(type) {
+                let audio;
+                if (type === 'success') {
+                    audio = new Audio('https://cdn.freesound.org/previews/654/654321_12315704-lq.mp3');
+                } else if (type === 'fail') {
+                    audio = new Audio('https://cdn.freesound.org/previews/672/672085_14040168-lq.mp3');
+                    audio.playbackRate = 0.7;
+                }
+                if (audio) audio.volume = 0.2, audio.play();
+            }
+
+            function showComboEffect() {
+                const comboDiv = document.getElementById('combo-display');
+                if (!comboDiv) return;
+                comboDiv.classList.remove('animate-bounce');
+                void comboDiv.offsetWidth;
+                comboDiv.classList.add('animate-bounce');
+            }
+
+            function startGame() {
+                initializeGameState();
+                gameState.gameRunning = true;
+                DOMElements.modalOverlay.classList.add('hidden');
+                DOMElements.startModal.classList.add('hidden');
+                DOMElements.gameOverModal.classList.add('hidden');
+                triggerDailyEvent();
+                renderSupplyBins();
+                updateAllUI();
+                gameState.timers.guestSpawner = setTimeout(spawnGuest, 1200);
+                gameState.timers.gameLoop = setInterval(gameLoop, 100);
+                DOMElements.acceptSupplyDropBtn.disabled = false;
+            }
+
+            function endGame(reason) {
+                if (!gameState.gameRunning) return;
+                gameState.gameRunning = false;
+                clearInterval(gameState.timers.gameLoop);
+                clearTimeout(gameState.timers.guestSpawner);
+                gameState.timers.patience.forEach(timer => clearInterval(timer));
+                DOMElements.finalScore.textContent = gameState.score;
+                DOMElements.gameOverReason.textContent = reason;
+                DOMElements.modalOverlay.classList.remove('hidden');
+                DOMElements.gameOverModal.classList.remove('hidden');
+                DOMElements.startModal.classList.add('hidden');
+            }
+
+            function gameLoop() {
+                if (!gameState.gameRunning) return;
+                let stressIncrease = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'requesting').length * 0.05 +
+                    gameState.showers.filter(s => s.status === 'dirty').length * 0.1 +
+                    gameState.suppliesToSort.length * 0.03;
+                gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + stressIncrease);
+                gameState.stress = Math.max(0, gameState.stress - 0.04);
+                updateTopBarUI();
+                if (gameState.stress >= CONFIG.MAX_STRESS) endGame("Your stress level got too high!");
+                if (gameState.upsetGuests >= CONFIG.MAX_UPSET_GUESTS) endGame("Too many guests left upset!");
+            }
+
+            function triggerDailyEvent() {
+                gameState.currentEvent = DAILY_EVENTS[Math.floor(Math.random() * DAILY_EVENTS.length)];
+                DOMElements.dailyEventText.textContent = gameState.currentEvent.text;
+            }
+
+            function spawnGuest() {
+                if (!gameState.gameRunning) return;
+                const guestId = `guest-${gameState.nextIds.guest++}`;
+                const guest = { id: guestId, status: 'waiting', requests: [], patience: 100, mood: 'happy' };
+                startPatienceTimer(guest);
+                gameState.guests.push(guest);
+                updateGuestUI(guestId);
+                const arrivalSpeed = (gameState.currentEvent.effect?.guestArrivalSpeed || 1) * 1.2;
+                gameState.timers.guestSpawner = setTimeout(spawnGuest, (Math.random() * 3500 + 2500) / arrivalSpeed);
+            }
+
+            function startPatienceTimer(guest) {
+                const patienceInterval = setInterval(() => {
+                    if (!gameState.gameRunning) { clearInterval(patienceInterval); return; }
+                    const g = gameState.guests.find(g => g.id === guest.id);
+                    if (!g) { clearInterval(patienceInterval); return; }
+                    const patienceDrain = g.status === 'waiting' ? 1 : 1.5;
+                    g.patience = Math.max(0, g.patience - patienceDrain);
+                    if (g.patience <= 0) {
+                        guestLeavesUpset(g.id);
+                    } else {
+                        const oldMood = g.mood;
+                        if (g.patience < 40) g.mood = 'unhappy';
+                        else if (g.patience < 75) g.mood = 'neutral';
+                        if (oldMood !== g.mood) updateGuestUI(g.id);
+                    }
+                }, CONFIG.BASE_GUEST_PATIENCE / 100 * (gameState.currentEvent.effect?.guestPatience || 1));
+                guest.patienceTimer = patienceInterval;
+                gameState.timers.patience.push(patienceInterval);
+            }
+
+            function guestLeavesUpset(guestId) {
+                const guestIndex = gameState.guests.findIndex(g => g.id === guestId);
+                if (guestIndex === -1) return;
+                const guest = gameState.guests[guestIndex];
+                clearInterval(guest.patienceTimer);
+                gameState.guests.splice(guestIndex, 1);
+                gameState.upsetGuests++;
+                gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + 15);
+                updateGuestUI(guestId, true); updateTopBarUI();
+            }
+
+            function assignGuestToShower(guestId, showerId) {
+                const shower = gameState.showers.find(s => s.id === showerId);
+                const guest = gameState.guests.find(g => g.id === guestId);
+                if (!shower || shower.status !== 'available' || !guest || guest.status !== 'waiting') return;
+                guest.status = 'showering';
+                clearInterval(guest.patienceTimer);
+                shower.status = 'occupied'; shower.guestId = guest.id;
+                const showerTime = CONFIG.BASE_SHOWER_TIME / (gameState.currentEvent.effect?.showerSpeed || 1) * 0.8;
+                shower.timer = startProgress(showerTime, p => shower.progress = p, () => finishShowering(shower.id));
+                updateGuestUI(guestId); updateShowersUI();
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+                playSound('success');
+                showComboEffect();
+            }
+
+            function finishShowering(showerId) {
+                const shower = gameState.showers.find(s => s.id === showerId);
+                if (!shower) return;
+                const guest = gameState.guests.find(g => g.id === shower.guestId);
+                shower.status = 'dirty';
+                gameState.score += CONFIG.POINTS_PER_SHOWER;
+                if (guest) {
+                    guest.status = 'requesting';
+                    generateGuestRequests(guest);
+                    guest.patience = 100;
+                    startPatienceTimer(guest);
+                    updateGuestUI(guest.id);
+                }
+                updateShowersUI(); updateTopBarUI();
+            }
+
+            function cleanShower(showerId) {
+                const shower = gameState.showers.find(s => s.id === showerId);
+                if (!shower || shower.status !== 'dirty') return;
+                shower.status = 'cleaning';
+                const cleanTime = CONFIG.BASE_CLEAN_TIME / (gameState.currentEvent.effect?.cleaningSpeed || 1);
+                shower.timer = startProgress(cleanTime, p => shower.progress = p, () => {
+                    shower.status = 'available'; updateShowersUI();
+                });
+                updateShowersUI();
+            }
+
+            function acceptSupplyDrop() {
+                DOMElements.acceptSupplyDropBtn.disabled = true;
+                const supplyShortage = gameState.currentEvent.effect?.supplyShortage;
+                const itemKeys = Object.keys(ITEM_TYPES);
+                for (let i = 0; i < CONFIG.SUPPLY_DROP_SIZE; i++) {
+                    let type = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                    if (supplyShortage === type) continue;
+                    gameState.suppliesToSort.push({ id: `supply-${gameState.nextIds.supply++}`, type });
+                }
+                updateSupplyDropUI();
+                setTimeout(() => { if (gameState.gameRunning) DOMElements.acceptSupplyDropBtn.disabled = false; }, 3000);
+            }
+
+            function sortSupplyItem(supplyId, binType) {
+                const supplyIndex = gameState.suppliesToSort.findIndex(s => s.id === supplyId);
+                if (supplyIndex === -1) return;
+                const item = gameState.suppliesToSort[supplyIndex];
+                if (item.type === binType) {
+                    gameState.inventory[item.type]++;
+                    let points = 5 + gameState.combo;
+                    gameState.score += points;
+                    gameState.suppliesToSort.splice(supplyIndex, 1);
+                    gameState.combo++;
+                    if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+                    playSound('success');
+                    showComboEffect();
+                } else {
+                    gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + 5);
+                    const binEl = DOMElements.supplyBins.querySelector(`.supply-bin[data-type="${binType}"]`);
+                    binEl.classList.add('deny');
+                    setTimeout(() => binEl.classList.remove('deny'), 400);
+                    gameState.combo = 0;
+                    playSound('fail');
+                }
+                updateSupplyDropUI(); updateSupplyBinsUI(); updateTopBarUI();
+            }
+
+            function generateGuestRequests(guest) {
+                const itemKeys = Object.keys(ITEM_TYPES);
+                const numRequests = Math.random() > 0.6 ? 2 : 1;
+                for (let i = 0; i < numRequests; i++) {
+                    const type = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+                    if (!guest.requests.find(r => r.type === type)) {
+                        guest.requests.push({ type, fulfilled: false });
+                    }
+                }
+                if (guest.requests.length === 0) {
+                    guest.requests.push({ type: itemKeys[Math.floor(Math.random() * itemKeys.length)], fulfilled: false });
+                }
+            }
+
+            function fulfillRequest(guestId, itemType) {
+                const guest = gameState.guests.find(g => g.id === guestId);
+                const request = guest?.requests.find(r => r.type === itemType && !r.fulfilled);
+                if (!request) return;
+                if (gameState.inventory[itemType] > 0) {
+                    gameState.inventory[itemType]--;
+                    request.fulfilled = true;
+                    let points = CONFIG.POINTS_PER_ITEM + gameState.combo;
+                    const itemBonus = gameState.currentEvent.effect?.itemBonus;
+                    if (itemBonus && itemBonus.type === itemType) points += itemBonus.points;
+                    gameState.score += points;
+                    gameState.combo++;
+                    if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+                    playSound('success');
+                    showComboEffect();
+                    if (guest.requests.every(r => r.fulfilled)) {
+                        const guestIndex = gameState.guests.findIndex(g => g.id === guestId);
+                        if (guestIndex > -1) {
+                            clearInterval(guest.patienceTimer);
+                            gameState.guests.splice(guestIndex, 1);
+                            updateGuestUI(guestId, true);
+                        }
+                    } else {
+                        updateGuestUI(guestId);
+                    }
+                } else {
+                    const requestBubble = document.getElementById(guestId);
+                    if (requestBubble) requestBubble.classList.add('deny');
+                    setTimeout(() => requestBubble?.classList.remove('deny'), 400);
+                    gameState.combo = 0;
+                    playSound('fail');
+                }
+                updateSupplyBinsUI(); updateTopBarUI();
+            }
+
+            function startProgress(duration, onUpdate, onComplete) {
+                let startTime = Date.now();
+                const timer = setInterval(() => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(100, (elapsed / duration) * 100);
+                    if (onUpdate) onUpdate(progress);
+                    if (progress >= 100) { clearInterval(timer); if (onComplete) onComplete(); }
+                }, 100);
+                return timer;
+            }
+
+            function handleDragStart(event, type, id) {
+                gameState.dragged = { type, id, element: event.target };
+                if (event.dataTransfer) event.dataTransfer.setData('text/plain', id);
+                setTimeout(() => event.target.classList.add('dragging'), 0);
+            }
+            function handleDragEnd(event) {
+                if (gameState.dragged.element) gameState.dragged.element.classList.remove('dragging');
+                document.querySelectorAll('.droppable').forEach(el => el.classList.remove('droppable'));
+                gameState.dragged = { type: null, id: null, element: null };
+            }
+            function handleDragOver(event) { event.preventDefault(); }
+            function handleDragEnter(event, validDropType, isAvailable) {
+                if (gameState.dragged.type === validDropType && isAvailable) event.currentTarget.classList.add('droppable');
+            }
+            function handleDragLeave(event) { event.currentTarget.classList.remove('droppable'); }
+            function handleDrop(event, dropZoneType, dropZoneId) {
+                event.preventDefault();
+                event.currentTarget.classList.remove('droppable');
+                if (gameState.dragged.type === 'guest' && dropZoneType === 'shower') assignGuestToShower(gameState.dragged.id, dropZoneId);
+                else if (gameState.dragged.type === 'supply' && dropZoneType === 'bin') sortSupplyItem(gameState.dragged.id, dropZoneId);
+            }
+
+            function updateAllUI() {
+                updateTopBarUI();
+                DOMElements.guestQueue.innerHTML = '';
+                DOMElements.requestsArea.innerHTML = '';
+                gameState.guests.forEach(g => updateGuestUI(g.id));
+                updateShowersUI();
+                updateSupplyDropUI();
+                updateSupplyBinsUI();
+            }
+
+            function updateGuestUI(guestId, remove = false) {
+                let element = document.getElementById(guestId);
+                if (remove) { element?.remove(); return; }
+                const guest = gameState.guests.find(g => g.id === guestId);
+                if (!guest) { element?.remove(); return; }
+                const moodEmoji = { happy: '😊', neutral: '😐', unhappy: '😠' }[guest.mood];
+                let newHTML = '', parentEl = null, className = 'p-2 rounded-lg border-2 bg-white';
+                if (guest.status === 'waiting') {
+                    parentEl = DOMElements.guestQueue; className += ' guest';
+                    newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]}</span></div>
+                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>`;
+                } else if (guest.status === 'requesting') {
+                    parentEl = DOMElements.requestsArea; className += ' item-request-bubble';
+                    const requestIcons = guest.requests.map(r => `<span data-type="${r.type}" class="requested-item text-2xl ${r.fulfilled ? 'fulfilled' : ''}">${ITEM_TYPES[r.type].emoji}</span>`).join('');
+                    newHTML = `<div class="flex items-center justify-between">
+                                <span class="font-bold pointer-events-none">${moodEmoji} Guest #${guest.id.split('-')[1]}</span>
+                                <div class="flex gap-2">${requestIcons}</div>
+                            </div>
+                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-orange-400" style="width: ${guest.patience}%;"></div></div>`;
+                } else {
+                    element?.remove(); return;
+                }
+                if (element && element.parentElement !== parentEl) {
+                    element.remove(); element = null;
+                }
+                if (!element) {
+                    element = document.createElement('div'); element.id = guestId; parentEl.appendChild(element);
+                    if (guest.status === 'waiting') {
+                        element.draggable = true;
+                        element.addEventListener('dragstart', e => handleDragStart(e, 'guest', guestId));
+                        element.addEventListener('dragend', handleDragEnd);
+                    }
+                }
+                element.className = className; element.innerHTML = newHTML;
+            }
+
+            function updateTopBarUI() {
+                DOMElements.score.textContent = gameState.score; DOMElements.day.textContent = gameState.day;
+                DOMElements.stressBar.style.width = `${gameState.stress}%`;
+                DOMElements.stressBar.style.backgroundColor = gameState.stress > 75 ? '#dc2626' : (gameState.stress > 40 ? '#f59e0b' : '#22c55e');
+                DOMElements.upsetGuests.textContent = `${gameState.upsetGuests}/${CONFIG.MAX_UPSET_GUESTS}`;
+                let comboDiv = document.getElementById('combo-display');
+                if (!comboDiv) {
+                    comboDiv = document.createElement('div');
+                    comboDiv.id = 'combo-display';
+                    comboDiv.className = 'text-center text-yellow-600 font-bold text-base md:text-lg animate-bounce';
+                    DOMElements.score.parentElement.appendChild(comboDiv);
+                }
+                if (gameState.combo > 1) {
+                    comboDiv.textContent = `🔥 Streak: ${gameState.combo}!`;
+                    comboDiv.style.display = '';
+                } else {
+                    comboDiv.textContent = '';
+                    comboDiv.style.display = 'none';
+                }
+            }
+
+            function updateShowersUI() {
+                DOMElements.showerStallsArea.innerHTML = '';
+                gameState.showers.forEach(shower => {
+                    const showerDiv = document.createElement('div'); showerDiv.id = shower.id;
+                    let content = '', classes = 'p-2 rounded-lg border-2 text-center transition-all flex flex-col justify-center items-center min-h-[120px]';
+                    switch (shower.status) {
+                        case 'available':
+                            classes += ' shower-stall bg-blue-50 border-blue-200'; content = `<span class="text-4xl pointer-events-none">🚿</span><span class="font-bold text-green-700 pointer-events-none">Available</span>`;
+                            showerDiv.addEventListener('dragover', handleDragOver);
+                            showerDiv.addEventListener('dragenter', e => handleDragEnter(e, 'guest', true));
+                            showerDiv.addEventListener('dragleave', handleDragLeave);
+                            showerDiv.addEventListener('drop', e => handleDrop(e, 'shower', shower.id));
+                            break;
+                        case 'occupied': classes += ' bg-yellow-50 border-yellow-200'; content = `<span class="text-4xl pointer-events-none">🧼</span><span class="font-bold text-yellow-700 pointer-events-none">Occupied</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-yellow-500" style="width: ${shower.progress}%;"></div></div>`; break;
+                        case 'dirty': classes += ' shower-stall dirty bg-red-50 border-red-200'; content = `<span class="text-4xl pointer-events-none">🧹</span><span class="font-bold text-red-700 pointer-events-none">Click to Clean</span>`; break;
+                        case 'cleaning': classes += ' bg-indigo-50 border-indigo-200'; content = `<span class="text-4xl pointer-events-none">✨</span><span class="font-bold text-indigo-700 pointer-events-none">Cleaning</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-indigo-500" style="width: ${shower.progress}%;"></div></div>`; break;
+                    }
+                    showerDiv.className = classes; showerDiv.innerHTML = content;
+                    DOMElements.showerStallsArea.appendChild(showerDiv);
+                });
+            }
+
+            function updateSupplyDropUI() {
+                DOMElements.supplyDropArea.innerHTML = gameState.suppliesToSort.map(s => `<div id="${s.id}" draggable="true" data-type="${s.type}" class="supply-item">${ITEM_TYPES[s.type].emoji}</div>`).join('');
+                DOMElements.supplyDropArea.querySelectorAll('.supply-item').forEach(el => {
+                    el.addEventListener('dragstart', e => handleDragStart(e, 'supply', el.id));
+                    el.addEventListener('dragend', handleDragEnd);
+                });
+            }
+
+            function renderSupplyBins() {
+                DOMElements.supplyBins.innerHTML = Object.keys(ITEM_TYPES).map(type => `
+                <div class="supply-bin p-2 rounded-lg border-2 text-center transition-all" data-type="${type}">
+                    <span class="text-2xl">${ITEM_TYPES[type].emoji}</span><h3 class="text-xs font-bold">${ITEM_TYPES[type].name}</h3><p id="${type}-stock" class="text-lg font-bold">0</p>
+                </div>`).join('');
+                DOMElements.supplyBins.querySelectorAll('.supply-bin').forEach(bin => {
+                    bin.addEventListener('dragover', handleDragOver);
+                    bin.addEventListener('dragenter', e => handleDragEnter(e, 'supply', true));
+                    bin.addEventListener('dragleave', handleDragLeave);
+                    bin.addEventListener('drop', e => handleDrop(e, 'bin', bin.dataset.type));
+                });
+            }
+
+            function updateSupplyBinsUI() {
+                Object.keys(ITEM_TYPES).forEach(type => {
+                    const stockEl = document.getElementById(`${type}-stock`);
+                    if (stockEl) stockEl.textContent = gameState.inventory[type];
+                });
+            }
+
+            DOMElements.startGameBtn.addEventListener('click', startGame);
+            DOMElements.restartGameBtn.addEventListener('click', startGame);
+            DOMElements.acceptSupplyDropBtn.addEventListener('click', acceptSupplyDrop);
+            DOMElements.showerStallsArea.addEventListener('click', e => {
+                const target = e.target.closest('.shower-stall.dirty'); if (target) cleanShower(target.id);
+            });
+            DOMElements.requestsArea.addEventListener('click', e => {
+                const targetItem = e.target.closest('.requested-item');
+                const targetGuest = e.target.closest('.item-request-bubble');
+                if (targetItem && targetGuest && !targetItem.classList.contains('fulfilled')) {
+                    fulfillRequest(targetGuest.id, targetItem.dataset.type);
+                }
+            });
+
+            initializeGameState();
+        });
+    </script>
+</body>
+
+</html>
