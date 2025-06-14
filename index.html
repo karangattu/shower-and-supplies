@@ -11,6 +11,7 @@
         content="Help Hope's Corner provide warm showers and essential supplies to the community through a dynamic sorting adventure.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-CP5WLN65B2"></script>
     <script>
@@ -91,12 +92,15 @@
             <div class="text-left bg-blue-50 p-3 rounded-lg border border-blue-200 my-4">
                 <h2 class="font-bold text-lg text-blue-800 mb-2">How to Play:</h2>
                 <ul class="list-disc pl-5 space-y-2 text-sm">
-                    <li>Click <b class="text-blue-600">"Accept Donations"</b> then drag supplies to the correct bins
-                        below.</li>
-                    <li><b class="text-green-600">Drag waiting guests</b> (😊) to an available shower.</li>
+                    <li><b>On Mobile:</b> <b class="text-blue-600">Tap a guest</b> to select them, then <b
+                            class="text-green-600">tap an available shower</b> to assign them.</li>
+                    <li><b>On Desktop:</b> You can also <b class="text-green-600">drag waiting guests</b> (😊) to an
+                        available shower.</li>
+                    <li>Click <b class="text-blue-600">"Accept Donations"</b> then drag supplies to the correct bins.
+                    </li>
                     <li><b class="text-red-600">Click dirty showers</b> (🧹) to clean them.</li>
-                    <li>After showering, guests will ask for specific items. <b class="text-purple-600">Click the item's
-                            icon</b> on their request to give it to them.</li>
+                    <li>After showering, guests will ask for items. <b class="text-purple-600">Click the item's icon</b>
+                        on their request to give it.</li>
                     <li>Serve guests before they become angry (😠)! Watch the <b class="text-yellow-600">Daily
                             Update</b> for new challenges.</li>
                 </ul>
@@ -130,6 +134,7 @@
                 gameOverReason: document.getElementById('game-over-reason'), startGameBtn: document.getElementById('start-game-btn'),
                 restartGameBtn: document.getElementById('restart-game-btn'), acceptSupplyDropBtn: document.getElementById('accept-supply-drop'),
                 supplyDropArea: document.getElementById('supply-drop-area'), supplyBins: document.getElementById('supply-bins'),
+                gameContainer: document.getElementById('game-container'),
             };
 
             const leaderboardUrl = 'https://script.google.com/macros/s/AKfycbzkQztKIezgMgpjqRBAyFstUFmkctO_cV2KYpulTEw-vCM3C_OgBqp0OBmMvbALkrln/exec';
@@ -147,7 +152,7 @@
             };
             const ITEM_TYPES = {
                 shirts: { emoji: '👕', name: 'Shirt' }, pants: { emoji: '👖', name: 'Pants' },
-                jackets: { emoji: '🧥', name: 'Jacket' }, toiletries: { emoji: '🧼', name: 'Toiletries' },
+                jackets: { emoji: '🧥', name: 'Jacket' }, toiletries: { emoji: '�', name: 'Toiletries' },
                 sleepingBags: { emoji: '🛌', name: 'Sleeping Bag' }
             };
             const DAILY_EVENTS = [
@@ -188,7 +193,6 @@
                     })
                     .then(result => {
                         if (!result.success || !Array.isArray(result.data)) {
-                            console.error("Invalid leaderboard data structure:", result);
                             leaderboardTableContainer.innerHTML = `<span class="text-red-500">Failed to load leaderboard. The data format is incorrect.</span>`;
                             return;
                         }
@@ -205,8 +209,7 @@
                         table += '</tbody></table>';
                         leaderboardTableContainer.innerHTML = table;
                     })
-                    .catch((err) => {
-                        console.error("Fetch Leaderboard Error:", err);
+                    .catch(() => {
                         leaderboardTableContainer.innerHTML = '<span class="text-red-500">Failed to load leaderboard.<br>This may be due to a network error or the backend script not being deployed for public access (CORS issue).</span>';
                     });
             }
@@ -232,7 +235,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error submitting score:', error);
                         leaderboardTableContainer.innerHTML = `<span class="text-red-500">Failed to submit score: ${error.message}</span>`;
                     });
             }
@@ -257,11 +259,22 @@
                     currentEvent: {},
                     timers: { gameLoop: null, guestSpawner: null, patience: [] },
                     dragged: { type: null, id: null, element: null },
-                    combo: 0, maxCombo: 0, servicedGuestsCount: 0
+                    combo: 0, maxCombo: 0, servicedGuestsCount: 0,
+                    selectedGuestId: null
                 };
                 for (let i = 0; i < CONFIG.NUM_SHOWER_STALLS; i++) {
                     gameState.showers.push({ id: `shower-${i}`, status: 'available', timer: null, progress: 0 });
                 }
+            }
+
+            function selectGuest(guestId) {
+                if (gameState.selectedGuestId === guestId) {
+                    gameState.selectedGuestId = null;
+                } else {
+                    gameState.selectedGuestId = guestId;
+                }
+                updateGuestUI();
+                updateShowersUI();
             }
 
             function playSound(type) {
@@ -387,6 +400,9 @@
                 const shower = gameState.showers.find(s => s.id === showerId);
                 const guest = gameState.guests.find(g => g.id === guestId);
                 if (!shower || shower.status !== 'available' || !guest || guest.status !== 'waiting') return;
+
+                gameState.selectedGuestId = null;
+
                 guest.status = 'showering';
                 clearInterval(guest.patienceTimer);
                 shower.status = 'occupied'; shower.guestId = guest.id;
@@ -561,58 +577,59 @@
 
             function updateAllUI() {
                 updateTopBarUI();
-                DOMElements.guestQueue.innerHTML = '';
-                DOMElements.requestsArea.innerHTML = '';
                 gameState.guests.forEach(g => updateGuestUI(g.id));
                 updateShowersUI();
                 updateSupplyDropUI();
                 updateSupplyBinsUI();
             }
 
-            function updateGuestUI(guestId, remove = false) {
-                let element = document.getElementById(guestId);
-                if (remove) { element?.remove(); return; }
-                const guest = gameState.guests.find(g => g.id === guestId);
-                if (!guest) { element?.remove(); return; }
-                const moodEmoji = { happy: '😊', neutral: '😐', unhappy: '😠' }[guest.mood];
-                let newHTML = '', parentEl = null, className = 'p-2 rounded-lg border-2 bg-white';
-                if (guest.status === 'waiting') {
-                    parentEl = DOMElements.guestQueue; className += ' guest';
-                    newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]}</span></div>
-                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>
-                            <button class='btn-primary mt-2 w-full block lg:hidden move-to-shower-btn' style='font-size:0.9rem;padding:0.3rem 0.5rem;'>Move to Shower</button>`;
-                } else if (guest.status === 'requesting') {
-                    parentEl = DOMElements.requestsArea; className += ' item-request-bubble';
-                    const requestIcons = guest.requests.map(r => `<span data-type="${r.type}" class="requested-item text-2xl ${r.fulfilled ? 'fulfilled' : ''}">${ITEM_TYPES[r.type].emoji}</span>`).join('');
-                    newHTML = `<div class="flex items-center justify-between">
-                                <span class="font-bold pointer-events-none">${moodEmoji} Guest #${guest.id.split('-')[1]}</span>
-                                <div class="flex gap-2">${requestIcons}</div>
-                            </div>
-                            <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-orange-400" style="width: ${guest.patience}%;"></div></div>`;
-                } else {
-                    element?.remove(); return;
+            function updateGuestUI(guestIdToUpdate, remove = false) {
+                if (guestIdToUpdate) {
+                    const element = document.getElementById(guestIdToUpdate);
+                    if (remove) {
+                        element?.remove();
+                        return;
+                    }
                 }
-                if (element && element.parentElement !== parentEl) {
-                    element.remove(); element = null;
-                }
-                if (!element) {
-                    element = document.createElement('div'); element.id = guestId; parentEl.appendChild(element);
+
+                DOMElements.guestQueue.innerHTML = '';
+                DOMElements.requestsArea.innerHTML = '';
+
+                gameState.guests.forEach(guest => {
+                    const isSelected = guest.id === gameState.selectedGuestId;
+                    const moodEmoji = { happy: '😊', neutral: '😐', unhappy: '😠' }[guest.mood];
+                    let newHTML = '', parentEl = null, className = 'p-2 rounded-lg border-2 bg-white';
+                    if (isSelected) className += ' selected';
+
                     if (guest.status === 'waiting') {
-                        element.draggable = true;
-                        element.addEventListener('dragstart', e => handleDragStart(e, 'guest', guestId));
-                        element.addEventListener('dragend', handleDragEnd);
+                        parentEl = DOMElements.guestQueue;
+                        className += ' guest';
+                        newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]}</span></div>
+                                <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>`;
+                    } else if (guest.status === 'requesting') {
+                        parentEl = DOMElements.requestsArea;
+                        className += ' item-request-bubble';
+                        const requestIcons = guest.requests.map(r => `<span data-type="${r.type}" class="requested-item text-2xl ${r.fulfilled ? 'fulfilled' : ''}">${ITEM_TYPES[r.type].emoji}</span>`).join('');
+                        newHTML = `<div class="flex items-center justify-between">
+                                    <span class="font-bold pointer-events-none">${moodEmoji} Guest #${guest.id.split('-')[1]}</span>
+                                    <div class="flex gap-2">${requestIcons}</div>
+                                </div>
+                                <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-orange-400" style="width: ${guest.patience}%;"></div></div>`;
                     }
-                }
-                element.className = className; element.innerHTML = newHTML;
-                if (guest.status === 'waiting') {
-                    const btn = element.querySelector('.move-to-shower-btn');
-                    if (btn) {
-                        btn.onclick = function () {
-                            const available = gameState.showers.find(s => s.status === 'available');
-                            if (available) assignGuestToShower(guestId, available.id);
-                        };
+
+                    if (parentEl) {
+                        const element = document.createElement('div');
+                        element.id = guest.id;
+                        element.className = className;
+                        element.innerHTML = newHTML;
+                        if (guest.status === 'waiting') {
+                            element.draggable = true;
+                            element.addEventListener('dragstart', e => handleDragStart(e, 'guest', guest.id));
+                            element.addEventListener('dragend', handleDragEnd);
+                        }
+                        parentEl.appendChild(element);
                     }
-                }
+                });
             }
 
             function updateTopBarUI() {
@@ -638,12 +655,16 @@
 
             function updateShowersUI() {
                 DOMElements.showerStallsArea.innerHTML = '';
+                const isGuestSelected = gameState.selectedGuestId !== null;
                 gameState.showers.forEach(shower => {
-                    const showerDiv = document.createElement('div'); showerDiv.id = shower.id;
+                    const showerDiv = document.createElement('div');
+                    showerDiv.id = shower.id;
                     let content = '', classes = 'p-2 rounded-lg border-2 text-center transition-all flex flex-col justify-center items-center min-h-[120px]';
                     switch (shower.status) {
                         case 'available':
-                            classes += ' shower-stall bg-blue-50 border-blue-200'; content = `<span class="text-4xl pointer-events-none">🚿</span><span class="font-bold text-green-700 pointer-events-none">Available</span>`;
+                            classes += ' shower-stall bg-blue-50 border-blue-200';
+                            if (isGuestSelected) classes += ' tap-target';
+                            content = `<span class="text-4xl pointer-events-none">🚿</span><span class="font-bold text-green-700 pointer-events-none">Available</span>`;
                             showerDiv.addEventListener('dragover', handleDragOver);
                             showerDiv.addEventListener('dragenter', e => handleDragEnter(e, 'guest', true));
                             showerDiv.addEventListener('dragleave', handleDragLeave);
@@ -653,7 +674,8 @@
                         case 'dirty': classes += ' shower-stall dirty bg-red-50 border-red-200'; content = `<span class="text-4xl pointer-events-none">🧹</span><span class="font-bold text-red-700 pointer-events-none">Click to Clean</span>`; break;
                         case 'cleaning': classes += ' bg-indigo-50 border-indigo-200'; content = `<span class="text-4xl pointer-events-none">✨</span><span class="font-bold text-indigo-700 pointer-events-none">Cleaning</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-indigo-500" style="width: ${shower.progress}%;"></div></div>`; break;
                     }
-                    showerDiv.className = classes; showerDiv.innerHTML = content;
+                    showerDiv.className = classes;
+                    showerDiv.innerHTML = content;
                     DOMElements.showerStallsArea.appendChild(showerDiv);
                 });
             }
@@ -689,56 +711,34 @@
             function addTouchDnD() {
                 let draggedElement = null;
                 document.body.addEventListener('touchstart', function (e) {
-                    const targetEl = e.target.closest('.guest, .supply-item');
+                    const targetEl = e.target.closest('.supply-item');
                     if (!targetEl) return;
-                    draggedElement = { element: targetEl, type: targetEl.classList.contains('guest') ? 'guest' : 'supply', id: targetEl.id };
+                    draggedElement = { element: targetEl, type: 'supply', id: targetEl.id };
                     targetEl.classList.add('dragging');
                     e.preventDefault();
                 }, { passive: false });
-
                 document.body.addEventListener('touchmove', function (e) {
                     if (!draggedElement) return;
                     e.preventDefault();
                     let touch = e.touches[0];
                     let dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-
                     document.querySelectorAll('.droppable').forEach(el => el.classList.remove('droppable'));
-
                     if (!dropTarget) return;
-
-                    let validDrop = false;
-                    if (draggedElement.type === 'guest') {
-                        const showerStall = dropTarget.closest('.shower-stall.bg-blue-50');
-                        if (showerStall) {
-                            showerStall.classList.add('droppable');
-                            validDrop = true;
-                        }
-                    } else if (draggedElement.type === 'supply') {
-                        const supplyBin = dropTarget.closest('.supply-bin');
-                        if (supplyBin) {
-                            supplyBin.classList.add('droppable');
-                            validDrop = true;
-                        }
+                    const supplyBin = dropTarget.closest('.supply-bin');
+                    if (supplyBin) {
+                        supplyBin.classList.add('droppable');
                     }
                 }, { passive: false });
-
                 document.body.addEventListener('touchend', function (e) {
                     if (!draggedElement) return;
                     e.preventDefault();
-
                     draggedElement.element.classList.remove('dragging');
                     let touch = e.changedTouches[0];
                     let dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
                     document.querySelectorAll('.droppable').forEach(el => el.classList.remove('droppable'));
-
                     if (dropTarget) {
-                        if (draggedElement.type === 'guest') {
-                            const showerStall = dropTarget.closest('.shower-stall.bg-blue-50');
-                            if (showerStall) assignGuestToShower(draggedElement.id, showerStall.id);
-                        } else if (draggedElement.type === 'supply') {
-                            const supplyBin = dropTarget.closest('.supply-bin');
-                            if (supplyBin) sortSupplyItem(draggedElement.id, supplyBin.dataset.type);
-                        }
+                        const supplyBin = dropTarget.closest('.supply-bin');
+                        if (supplyBin) sortSupplyItem(draggedElement.id, supplyBin.dataset.type);
                     }
                     draggedElement = null;
                 }, { passive: false });
@@ -747,9 +747,31 @@
             DOMElements.startGameBtn.addEventListener('click', startGame);
             DOMElements.restartGameBtn.addEventListener('click', startGame);
             DOMElements.acceptSupplyDropBtn.addEventListener('click', acceptSupplyDrop);
-            DOMElements.showerStallsArea.addEventListener('click', e => {
-                const target = e.target.closest('.shower-stall.dirty'); if (target) cleanShower(target.id);
+
+            DOMElements.guestQueue.addEventListener('click', e => {
+                const targetGuest = e.target.closest('.guest');
+                if (targetGuest) {
+                    selectGuest(targetGuest.id);
+                }
             });
+
+            DOMElements.showerStallsArea.addEventListener('click', e => {
+                const target = e.target.closest('.shower-stall');
+                if (!target) return;
+
+                if (target.classList.contains('dirty')) {
+                    cleanShower(target.id);
+                } else if (target.classList.contains('tap-target') && gameState.selectedGuestId) {
+                    assignGuestToShower(gameState.selectedGuestId, target.id);
+                }
+            });
+
+            DOMElements.gameContainer.addEventListener('click', e => {
+                if (e.target === DOMElements.gameContainer && gameState.selectedGuestId) {
+                    selectGuest(gameState.selectedGuestId);
+                }
+            });
+
             DOMElements.requestsArea.addEventListener('click', e => {
                 const targetItem = e.target.closest('.requested-item');
                 const targetGuest = e.target.closest('.item-request-bubble');
