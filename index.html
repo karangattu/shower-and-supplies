@@ -85,7 +85,7 @@
         </div>
     </div>
 
-    <div id="modal-overlay">
+    <div id="modal-overlay" class="hidden">
         <div id="start-modal" class="modal">
             <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Shower & Supplies</h1>
             <p class="text-gray-600 mb-4">Each day brings a new challenge. Adapt and serve the community!</p>
@@ -151,8 +151,12 @@
                 BASE_TWO_ITEM_CHANCE: 0.2
             };
             const ITEM_TYPES = {
-                shirts: { emoji: '👕', name: 'Shirt' }, pants: { emoji: '👖', name: 'Pants' },
-                jackets: { emoji: '🧥', name: 'Jacket' }, toiletries: { emoji: '�', name: 'Toiletries' },
+                shirts: { emoji: '👕', name: 'Shirt' },
+                pants: { emoji: '👖', name: 'Pants' },
+                jackets: { emoji: '🧥', name: 'Jacket' },
+                toothbrush: { emoji: '🪥', name: 'Toothbrush' },
+                shoes: { emoji: '👟', name: 'Shoes' },
+                razor: { emoji: '🪒', name: 'Razor' },
                 sleepingBags: { emoji: '🛌', name: 'Sleeping Bag' }
             };
             const DAILY_EVENTS = [
@@ -216,9 +220,15 @@
 
             function promptAndSubmitScore(score) {
                 let name = prompt('Enter your name for the leaderboard (max 20 chars):', '');
-                if (!name) return;
+                if (!name) {
+                    DOMElements.gameOverModal.classList.remove('hidden');
+                    leaderboardModal.classList.add('hidden');
+                    return;
+                }
                 name = name.trim().slice(0, 20) || 'Anonymous';
 
+                DOMElements.gameOverModal.classList.add('hidden');
+                leaderboardModal.classList.remove('hidden');
                 leaderboardTableContainer.innerHTML = '<span class="text-gray-500">Submitting score...</span>';
 
                 fetch(leaderboardUrl, {
@@ -229,7 +239,7 @@
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            setTimeout(fetchLeaderboard, 500);
+                            setTimeout(fetchLeaderboard, 200);
                         } else {
                             throw new Error(data.error || 'Unknown submission error');
                         }
@@ -240,6 +250,8 @@
             }
 
             leaderboardBtn.addEventListener('click', () => {
+                DOMElements.startModal.classList.add('hidden');
+                DOMElements.gameOverModal.classList.add('hidden');
                 leaderboardModal.classList.remove('hidden');
                 DOMElements.modalOverlay.classList.remove('hidden');
                 fetchLeaderboard();
@@ -247,7 +259,11 @@
 
             closeLeaderboardBtn.addEventListener('click', () => {
                 leaderboardModal.classList.add('hidden');
-                DOMElements.modalOverlay.classList.add('hidden');
+                if (!DOMElements.gameOverModal.classList.contains('hidden')) {
+                    // Don't hide overlay if game over is still showing
+                } else {
+                    DOMElements.modalOverlay.classList.add('hidden');
+                }
             });
 
             function initializeGameState() {
@@ -255,7 +271,7 @@
                     score: 0, day: 1, stress: 0, upsetGuests: 0, gameRunning: false,
                     nextIds: { guest: 0, supply: 0 },
                     guests: [], showers: [], suppliesToSort: [],
-                    inventory: { shirts: 2, pants: 2, jackets: 1, toiletries: 3, sleepingBags: 1 },
+                    inventory: { shirts: 2, pants: 2, jackets: 1, toothbrush: 2, shoes: 2, razor: 1, sleepingBags: 1 },
                     currentEvent: {},
                     timers: { gameLoop: null, guestSpawner: null, patience: [] },
                     dragged: { type: null, id: null, element: null },
@@ -302,6 +318,7 @@
                 DOMElements.modalOverlay.classList.add('hidden');
                 DOMElements.startModal.classList.add('hidden');
                 DOMElements.gameOverModal.classList.add('hidden');
+                leaderboardModal.classList.add('hidden');
                 triggerDailyEvent();
                 renderSupplyBins();
                 updateAllUI();
@@ -318,19 +335,20 @@
                 clearInterval(gameState.timers.gameLoop);
                 clearTimeout(gameState.timers.guestSpawner);
                 gameState.timers.patience.forEach(timer => clearInterval(timer));
+
                 DOMElements.finalScore.textContent = gameState.score;
                 DOMElements.gameOverReason.textContent = reason;
-                DOMElements.modalOverlay.classList.remove('hidden');
-                DOMElements.gameOverModal.classList.remove('hidden');
+
+                DOMElements.leaderboardModal.classList.add('hidden');
                 DOMElements.startModal.classList.add('hidden');
+                DOMElements.gameOverModal.classList.remove('hidden');
+                DOMElements.modalOverlay.classList.remove('hidden');
+
                 if (typeof gtag === 'function') gtag('event', 'game_over', { reason: reason });
 
-                setTimeout(() => {
-                    if (gameState.score > 0) {
-                        leaderboardModal.classList.remove('hidden');
-                        promptAndSubmitScore(gameState.score);
-                    }
-                }, 500);
+                if (gameState.score > 0) {
+                    promptAndSubmitScore(gameState.score);
+                }
             }
 
             function gameLoop() {
@@ -577,7 +595,7 @@
 
             function updateAllUI() {
                 updateTopBarUI();
-                gameState.guests.forEach(g => updateGuestUI(g.id));
+                updateGuestUI();
                 updateShowersUI();
                 updateSupplyDropUI();
                 updateSupplyBinsUI();
@@ -670,7 +688,7 @@
                             showerDiv.addEventListener('dragleave', handleDragLeave);
                             showerDiv.addEventListener('drop', e => handleDrop(e, 'shower', shower.id));
                             break;
-                        case 'occupied': classes += ' bg-yellow-50 border-yellow-200'; content = `<span class="text-4xl pointer-events-none">🧼</span><span class="font-bold text-yellow-700 pointer-events-none">Occupied</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-yellow-500" style="width: ${shower.progress}%;"></div></div>`; break;
+                        case 'occupied': classes += ' bg-yellow-50 border-yellow-200'; content = `<span class="text-4xl pointer-events-none">🛀</span><span class="font-bold text-yellow-700 pointer-events-none">Occupied</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-yellow-500" style="width: ${shower.progress}%;"></div></div>`; break;
                         case 'dirty': classes += ' shower-stall dirty bg-red-50 border-red-200'; content = `<span class="text-4xl pointer-events-none">🧹</span><span class="font-bold text-red-700 pointer-events-none">Click to Clean</span>`; break;
                         case 'cleaning': classes += ' bg-indigo-50 border-indigo-200'; content = `<span class="text-4xl pointer-events-none">✨</span><span class="font-bold text-indigo-700 pointer-events-none">Cleaning</span><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-indigo-500" style="width: ${shower.progress}%;"></div></div>`; break;
                     }
@@ -767,7 +785,7 @@
             });
 
             DOMElements.gameContainer.addEventListener('click', e => {
-                if (e.target === DOMElements.gameContainer && gameState.selectedGuestId) {
+                if (e.target.closest('.station') && !e.target.closest('.guest, .shower-stall, .item-request-bubble') && gameState.selectedGuestId) {
                     selectGuest(gameState.selectedGuestId);
                 }
             });
@@ -779,6 +797,10 @@
                     fulfillRequest(targetGuest.id, targetItem.dataset.type);
                 }
             });
+
+            // Show the start modal initially
+            DOMElements.modalOverlay.classList.remove('hidden');
+            DOMElements.startModal.classList.remove('hidden');
 
             initializeGameState();
             addTouchDnD();
