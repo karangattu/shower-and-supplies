@@ -200,11 +200,12 @@
                             leaderboardTableContainer.innerHTML = `<span class="text-red-500">Failed to load leaderboard. The data format is incorrect.</span>`;
                             return;
                         }
+                        const top5 = result.data.slice(0, 5);
                         let table = `<table class='w-full text-left'><thead><tr><th class='pr-4'>Name</th><th>Score</th></tr></thead><tbody>`;
-                        if (result.data.length === 0) {
+                        if (top5.length === 0) {
                             table += `<tr><td colspan="2" class="text-center py-4">No scores yet!</td></tr>`;
                         } else {
-                            result.data.forEach(row => {
+                            top5.forEach(row => {
                                 const playerName = String(row.playerName || 'N/A').replace(/[<>]/g, c => ({ '<': '&lt;', '>': '&gt;' }[c]));
                                 const score = parseInt(row.score) || 0;
                                 table += `<tr><td class='pr-4'>${playerName}</td><td>${score}</td></tr>`;
