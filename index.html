@@ -172,18 +172,18 @@
             ];
 
             function getDifficultySettings() {
-                const difficultyTier = Math.floor(gameState.servicedGuestsCount / 5);
-                const patienceMultiplier = Math.max(0.5, 1 - difficultyTier * 0.08);
-                const timeMultiplier = 1 + difficultyTier * 0.07;
-                const arrivalMultiplier = Math.max(0.4, 1 - difficultyTier * 0.1);
-                const twoItemChance = Math.min(0.8, CONFIG.BASE_TWO_ITEM_CHANCE + difficultyTier * 0.1);
+                const difficultyTier = Math.floor(gameState.servicedGuestsCount / 7);
+                const patienceMultiplier = Math.max(0.5, 1 - difficultyTier * 0.07);
+                const timeMultiplier = 1 + difficultyTier * 0.06;
+                const arrivalMultiplier = Math.max(0.3, 1 - difficultyTier * 0.07);
+                const twoItemChance = Math.min(0.8, CONFIG.BASE_TWO_ITEM_CHANCE + difficultyTier * 0.08);
 
                 return {
                     guestPatience: CONFIG.BASE_GUEST_PATIENCE * patienceMultiplier,
                     showerTime: CONFIG.BASE_SHOWER_TIME * timeMultiplier,
                     cleanTime: CONFIG.BASE_CLEAN_TIME * timeMultiplier,
-                    guestArrivalMin: CONFIG.BASE_GUEST_ARRIVAL_MIN * arrivalMultiplier,
-                    guestArrivalMax: CONFIG.BASE_GUEST_ARRIVAL_MAX * arrivalMultiplier,
+                    guestArrivalMin: CONFIG.BASE_GUEST_ARRIVAL_MIN * 1.5 * arrivalMultiplier,
+                    guestArrivalMax: CONFIG.BASE_GUEST_ARRIVAL_MAX * 1.5 * arrivalMultiplier,
                     twoItemChance: twoItemChance
                 };
             }
