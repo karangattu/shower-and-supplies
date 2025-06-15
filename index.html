@@ -111,14 +111,15 @@
             <h1 class="text-3xl font-bold mb-2 text-red-700">Day Over!</h1>
             <p id="game-over-reason" class="text-lg mb-4"></p>
             <p class="text-lg">Final Score: <span id="final-score" class="font-bold text-2xl"
-                    style="color: var(--primary);">0</span></p><button id="restart-game-btn"
-                class="btn-primary w-full mt-4">Play Again</button>
+                    style="color: var(--primary);">0</span></p>
+            <button id="restart-game-btn" class="btn-primary w-full mt-4">Play Again</button>
         </div>
         <div id="leaderboard-modal" class="modal hidden">
             <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Leaderboard</h1>
             <div id="leaderboard-table-container" class="mb-4 min-h-[120px] flex flex-col items-center justify-center">
             </div>
             <button id="close-leaderboard-btn" class="btn-primary w-full mt-2">Close</button>
+            <button id="play-again-btn" class="btn-primary w-full mt-2 hidden">Play Again</button>
         </div>
     </div>
 
@@ -142,6 +143,7 @@
             const leaderboardModal = document.getElementById('leaderboard-modal');
             const leaderboardTableContainer = document.getElementById('leaderboard-table-container');
             const closeLeaderboardBtn = document.getElementById('close-leaderboard-btn');
+            const playAgainBtn = document.getElementById('play-again-btn');
 
             let gameState = {};
             const CONFIG = {
@@ -220,12 +222,10 @@
             }
 
             function promptAndSubmitScore(score) {
-                // Show the overlay right away
                 DOMElements.modalOverlay.classList.remove('hidden');
 
                 let name = prompt('Enter your name for the leaderboard (max 20 chars):', '');
                 if (!name) {
-                    // If the user cancels the prompt, show the regular game over screen
                     DOMElements.gameOverModal.classList.remove('hidden');
                     leaderboardModal.classList.add('hidden');
                     return;
@@ -235,6 +235,7 @@
                 DOMElements.gameOverModal.classList.add('hidden');
                 DOMElements.startModal.classList.add('hidden');
                 leaderboardModal.classList.remove('hidden');
+                playAgainBtn.classList.remove('hidden');
                 leaderboardTableContainer.innerHTML = '<span class="text-gray-500">Submitting score...</span>';
 
                 fetch(leaderboardUrl, {
@@ -265,6 +266,7 @@
                 DOMElements.startModal.classList.add('hidden');
                 DOMElements.gameOverModal.classList.add('hidden');
                 leaderboardModal.classList.remove('hidden');
+                playAgainBtn.classList.add('hidden');
                 DOMElements.modalOverlay.classList.remove('hidden');
                 fetchLeaderboard();
             });
@@ -277,6 +279,12 @@
                 }
             });
 
+            playAgainBtn.addEventListener('click', () => {
+                leaderboardModal.classList.add('hidden');
+                DOMElements.modalOverlay.classList.add('hidden');
+                startGame();
+            });
+
             function initializeGameState() {
                 gameState = {
                     score: 0, day: 1, stress: 0, upsetGuests: 0, gameRunning: false,
@@ -286,7 +294,7 @@
                     currentEvent: {},
                     timers: { gameLoop: null, guestSpawner: null, patience: [] },
                     dragged: { type: null, id: null, element: null },
-                    combo: 0, maxCombo: 0, servicedGuestsCount: 0,
+                    servicedGuestsCount: 0,
                     selectedGuestId: null
                 };
                 for (let i = 0; i < CONFIG.NUM_SHOWER_STALLS; i++) {
@@ -313,14 +321,6 @@
                     audio.playbackRate = 0.7;
                 }
                 if (audio) audio.volume = 0.2, audio.play();
-            }
-
-            function showComboEffect() {
-                const comboDiv = document.getElementById('combo-display');
-                if (!comboDiv) return;
-                comboDiv.classList.remove('animate-bounce');
-                void comboDiv.offsetWidth;
-                comboDiv.classList.add('animate-bounce');
             }
 
             function startGame() {
@@ -465,10 +465,7 @@
                 const showerTime = difficulty.showerTime / (gameState.currentEvent.effect?.showerSpeed || 1);
                 shower.timer = startProgress(showerTime, p => shower.progress = p, () => finishShowering(shower.id));
                 updateGuestUI(guestId); updateShowersUI();
-                gameState.combo++;
-                if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
                 playSound('success');
-                showComboEffect();
                 if (typeof gtag === 'function') gtag('event', 'assign_guest_to_shower');
             }
 
@@ -520,20 +517,16 @@
                 const item = gameState.suppliesToSort[supplyIndex];
                 if (item.type === binType) {
                     gameState.inventory[item.type]++;
-                    let points = 5 + gameState.combo;
+                    let points = 15;
                     gameState.score += points;
                     gameState.suppliesToSort.splice(supplyIndex, 1);
-                    gameState.combo++;
-                    if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
                     playSound('success');
-                    showComboEffect();
                     if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'correct', type: item.type });
                 } else {
                     gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + 5);
                     const binEl = DOMElements.supplyBins.querySelector(`.supply-bin[data-type="${binType}"]`);
                     binEl.classList.add('deny');
                     setTimeout(() => binEl.classList.remove('deny'), 400);
-                    gameState.combo = 0;
                     playSound('fail');
                     if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'incorrect', type: item.type });
                 }
@@ -562,14 +555,11 @@
                 if (gameState.inventory[itemType] > 0) {
                     gameState.inventory[itemType]--;
                     request.fulfilled = true;
-                    let points = CONFIG.POINTS_PER_ITEM + gameState.combo;
+                    let points = CONFIG.POINTS_PER_ITEM;
                     const itemBonus = gameState.currentEvent.effect?.itemBonus;
                     if (itemBonus && itemBonus.type === itemType) points += itemBonus.points;
                     gameState.score += points;
-                    gameState.combo++;
-                    if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
                     playSound('success');
-                    showComboEffect();
                     if (guest.requests.every(r => r.fulfilled)) {
                         const guestIndex = gameState.guests.findIndex(g => g.id === guestId);
                         if (guestIndex > -1) {
@@ -586,7 +576,6 @@
                     const requestBubble = document.getElementById(guestId);
                     if (requestBubble) requestBubble.classList.add('deny');
                     setTimeout(() => requestBubble?.classList.remove('deny'), 400);
-                    gameState.combo = 0;
                     playSound('fail');
                 }
                 updateSupplyBinsUI(); updateTopBarUI();
@@ -692,20 +681,6 @@
                 DOMElements.stressBar.style.width = `${gameState.stress}%`;
                 DOMElements.stressBar.style.backgroundColor = gameState.stress > 75 ? '#dc2626' : (gameState.stress > 40 ? '#f59e0b' : '#22c55e');
                 DOMElements.upsetGuests.textContent = `${gameState.upsetGuests}/${CONFIG.MAX_UPSET_GUESTS}`;
-                let comboDiv = document.getElementById('combo-display');
-                if (!comboDiv) {
-                    comboDiv = document.createElement('div');
-                    comboDiv.id = 'combo-display';
-                    comboDiv.className = 'text-center text-yellow-600 font-bold text-base md:text-lg animate-bounce';
-                    DOMElements.score.parentElement.appendChild(comboDiv);
-                }
-                if (gameState.combo > 1) {
-                    comboDiv.textContent = `🔥 Streak: ${gameState.combo}!`;
-                    comboDiv.style.display = '';
-                } else {
-                    comboDiv.textContent = '';
-                    comboDiv.style.display = 'none';
-                }
             }
 
             function updateShowersUI() {
@@ -835,7 +810,6 @@
                 }
             });
 
-            // Show the start modal initially
             DOMElements.modalOverlay.classList.remove('hidden');
             DOMElements.startModal.classList.remove('hidden');
 
