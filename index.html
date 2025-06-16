@@ -63,6 +63,8 @@
                 </div>
                 <h3 class="font-semibold text-center mb-2 text-gray-600">Waiting for Shower</h3>
                 <div id="guest-queue" class="space-y-2 mb-4"></div>
+                <h3 class="font-semibold text-center mb-2 text-gray-600">Waiting for Laundry</h3>
+                <div id="laundry-queue" class="space-y-2 mb-4"></div>
                 <h3 class="font-semibold text-center mb-2 text-gray-600">Waiting for Items</h3>
                 <div id="requests-area" class="space-y-2 flex-grow"></div>
             </div>
@@ -72,6 +74,24 @@
                     <h2 class="text-lg font-semibold">Shower Stalls</h2>
                 </div>
                 <div id="shower-stalls-area" class="grid grid-cols-2 gap-4 flex-grow"></div>
+            </div>
+
+            <div id="laundry-station" class="station">
+                <div class="station-header"><span class="station-icon">🧺</span>
+                    <h2 class="text-lg font-semibold">Laundry</h2>
+                </div>
+                <div id="laundry-machines-area" class="space-y-3 flex-grow">
+                    <div id="washer" class="laundry-machine p-3 rounded-lg border-2 text-center bg-blue-50 border-blue-200">
+                        <span class="text-3xl">🫧</span>
+                        <div class="font-bold text-blue-700">Washing Machine</div>
+                        <div class="text-sm text-blue-600">Available</div>
+                    </div>
+                    <div id="dryer" class="laundry-machine p-3 rounded-lg border-2 text-center bg-orange-50 border-orange-200">
+                        <span class="text-3xl">🔥</span>
+                        <div class="font-bold text-orange-700">Dryer</div>
+                        <div class="text-sm text-orange-600">Available</div>
+                    </div>
+                </div>
             </div>
 
             <div id="supply-station" class="station">
@@ -89,15 +109,15 @@
     <div id="modal-overlay" class="hidden">
         <div id="start-modal" class="modal">
             <h1 class="text-2xl font-bold mb-2" style="color: var(--primary-dark);">Welcome to Shower & Supplies</h1>
-            <p class="text-gray-700 mb-4 text-base">Join Hope's Corner in providing warm showers and essential supplies to our community. Each day brings new challenges—your care and quick thinking will make a difference!</p>
+            <p class="text-gray-700 mb-4 text-base">Join Hope's Corner in providing warm showers, laundry services, and essential supplies to our community. Each day brings new challenges—your care and quick thinking will make a difference!</p>
             <div class="text-left bg-blue-50 p-3 rounded-lg border border-blue-200 my-4">
                 <h2 class="font-bold text-lg text-blue-800 mb-2">How to Play</h2>
                 <ul class="list-disc pl-5 space-y-2 text-sm">
-                    <li><b>On Mobile:</b> <b class="text-blue-600">Tap a guest</b> to select them, then <b class="text-green-600">tap an available shower</b> to assign them.</li>
-                    <li><b>On Desktop:</b> You can also <b class="text-green-600">drag waiting guests</b> (😊) to an available shower.</li>
+                    <li><b>On Mobile:</b> <b class="text-blue-600">Tap a guest</b> to select them, then <b class="text-green-600">tap an available shower or washer</b> to assign them.</li>
+                    <li><b>On Desktop:</b> You can also <b class="text-green-600">drag waiting guests</b> (😊) to an available shower or laundry machine.</li>
                     <li>Click <b class="text-blue-600">"Accept Donations"</b> then drag supplies to the correct bins.</li>
-                    <li><b class="text-red-600">Click dirty showers</b> (🧹) to clean them.</li>
-                    <li>After showering, guests will ask for items. <b class="text-purple-600">Click the item's icon</b> on their request to give it.</li>
+                    <li><b class="text-red-600">Click dirty facilities</b> (🧹) to clean them.</li>
+                    <li>After using services, guests will ask for items. <b class="text-purple-600">Click the item's icon</b> on their request to give it.</li>
                     <li>Serve guests before they become upset (😠)! Watch the <b class="text-yellow-600">Daily Update</b> for new challenges.</li>
                     <li><b class="text-orange-600">Call Volunteers</b> (50 points) when overwhelmed to get help with chores!</li>
                 </ul>
@@ -134,6 +154,7 @@
                 score: document.getElementById('score'), day: document.getElementById('day'),
                 stressBar: document.getElementById('stress-bar'), upsetGuests: document.getElementById('upset-guests-display'),
                 guestQueue: document.getElementById('guest-queue'), showerStallsArea: document.getElementById('shower-stalls-area'),
+                laundryQueue: document.getElementById('laundry-queue'), laundryMachinesArea: document.getElementById('laundry-machines-area'),
                 requestsArea: document.getElementById('requests-area'), dailyEventText: document.getElementById('daily-event-text'),
                 modalOverlay: document.getElementById('modal-overlay'), startModal: document.getElementById('start-modal'),
                 gameOverModal: document.getElementById('game-over-modal'), finalScore: document.getElementById('final-score'),
@@ -157,7 +178,8 @@
                 MAX_STRESS: 100, MAX_UPSET_GUESTS: 5, NUM_SHOWER_STALLS: 2, BASE_SHOWER_TIME: 10000,
                 BASE_CLEAN_TIME: 6000, BASE_GUEST_PATIENCE: 30000, POINTS_PER_SHOWER: 50,
                 POINTS_PER_ITEM: 25, SUPPLY_DROP_SIZE: 4, BASE_GUEST_ARRIVAL_MIN: 2500, BASE_GUEST_ARRIVAL_MAX: 3500,
-                BASE_TWO_ITEM_CHANCE: 0.2, VOLUNTEER_COST: 50, VOLUNTEER_DURATION: 8000
+                BASE_TWO_ITEM_CHANCE: 0.2, VOLUNTEER_COST: 50, VOLUNTEER_DURATION: 8000,
+                BASE_WASH_TIME: 12000, BASE_DRY_TIME: 8000, POINTS_PER_LAUNDRY: 75
             };
             const ITEM_TYPES = {
                 shirts: { emoji: '👕', name: 'Shirt' },
@@ -170,12 +192,14 @@
             };
             const DAILY_EVENTS = [
                 { id: "calm_day", text: "A calm, quiet day. Business as usual.", effect: {} },
-                { id: "rainy_day", text: "🌧️ Rainy day rush! Guests arrive faster.", effect: { guestArrivalSpeed: 1.5 } },
+                { id: "rainy_day", text: "🌧️ Rainy day rush! Guests arrive faster and need more laundry.", effect: { guestArrivalSpeed: 1.5, laundryChance: 1.3 } },
                 { id: "volunteer_help", text: "✨ Extra volunteers are helping clean today! Cleaning is much faster.", effect: { cleaningSpeed: 2 } },
                 { id: "slow_heater", text: "🔧 The water heater is slow today. Showers take longer.", effect: { showerSpeed: 0.7 } },
                 { id: "jacket_demand", text: "🧥 A cold front is moving in! Extra points for giving jackets.", effect: { itemBonus: { type: 'jackets', points: 30 } } },
                 { id: "supply_shortage", text: "🚚 A delivery is delayed. No new sleeping bag drops today.", effect: { supplyShortage: 'sleepingBags' } },
-                { id: "impatient_crowd", text: "😠 It's a hot day and guests are impatient.", effect: { guestPatience: 0.75 } }
+                { id: "impatient_crowd", text: "😠 It's a hot day and guests are impatient.", effect: { guestPatience: 0.75 } },
+                { id: "laundry_rush", text: "🧺 Word got out about free laundry! More guests need washing.", effect: { laundryChance: 2.0 } },
+                { id: "machine_maintenance", text: "⚙️ The laundry machines need maintenance. Cycles take longer.", effect: { laundrySpeed: 0.6 } }
             ];
 
             function getDifficultySettings() {
@@ -188,6 +212,8 @@
                 return {
                     guestPatience: CONFIG.BASE_GUEST_PATIENCE * patienceMultiplier,
                     showerTime: CONFIG.BASE_SHOWER_TIME * timeMultiplier,
+                    washTime: CONFIG.BASE_WASH_TIME * timeMultiplier,
+                    dryTime: CONFIG.BASE_DRY_TIME * timeMultiplier,
                     cleanTime: CONFIG.BASE_CLEAN_TIME * timeMultiplier,
                     guestArrivalMin: CONFIG.BASE_GUEST_ARRIVAL_MIN * 1.5 * arrivalMultiplier,
                     guestArrivalMax: CONFIG.BASE_GUEST_ARRIVAL_MAX * 1.5 * arrivalMultiplier,
@@ -197,7 +223,7 @@
 
             function showGuestTapHint() {
                 if (localStorage.getItem('guestTapHintShown')) return;
-                const firstGuest = DOMElements.guestQueue.querySelector('.guest');
+                const firstGuest = DOMElements.guestQueue.querySelector('.guest') || DOMElements.laundryQueue.querySelector('.guest');
                 if (!firstGuest) return;
                 let hint = document.createElement('div');
                 hint.className = 'guest-tap-hint';
@@ -311,7 +337,7 @@
                 gameState = {
                     score: 0, day: 1, stress: 0, upsetGuests: 0, gameRunning: false,
                     nextIds: { guest: 0, supply: 0 },
-                    guests: [], showers: [], suppliesToSort: [],
+                    guests: [], showers: [], laundryMachines: [], suppliesToSort: [],
                     inventory: { shirts: 2, pants: 2, jackets: 1, toothbrush: 2, shoes: 2, razor: 1, sleepingBags: 1 },
                     currentEvent: {},
                     timers: { gameLoop: null, guestSpawner: null, patience: [] },
@@ -324,6 +350,10 @@
                 for (let i = 0; i < CONFIG.NUM_SHOWER_STALLS; i++) {
                     gameState.showers.push({ id: `shower-${i}`, status: 'available', timer: null, progress: 0 });
                 }
+                gameState.laundryMachines.push(
+                    { id: 'washer', type: 'wash', status: 'available', timer: null, progress: 0, guestId: null },
+                    { id: 'dryer', type: 'dry', status: 'available', timer: null, progress: 0, guestId: null }
+                );
             }
 
             function selectGuest(guestId) {
@@ -334,6 +364,7 @@
                 }
                 updateGuestUI();
                 updateShowersUI();
+                updateLaundryUI();
             }
 
             function playSound(type) {
@@ -359,6 +390,14 @@
                     shower.timer = startProgress(1000, p => shower.progress = p, () => {
                         shower.status = 'available';
                         updateShowersUI();
+                    });
+                });
+
+                gameState.laundryMachines.filter(m => m.status === 'dirty').forEach(machine => {
+                    machine.status = 'cleaning';
+                    machine.timer = startProgress(1000, p => machine.progress = p, () => {
+                        machine.status = 'available';
+                        updateLaundryUI();
                     });
                 });
 
@@ -449,8 +488,9 @@
 
             function gameLoop() {
                 if (!gameState.gameRunning) return;
-                let stressIncrease = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'requesting').length * 0.05 +
+                let stressIncrease = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'requesting' || g.status === 'waiting-laundry').length * 0.05 +
                     gameState.showers.filter(s => s.status === 'dirty').length * 0.1 +
+                    gameState.laundryMachines.filter(m => m.status === 'dirty').length * 0.08 +
                     gameState.suppliesToSort.length * 0.03;
                 
                 if (gameState.volunteersActive) {
@@ -472,19 +512,24 @@
             function spawnGuest() {
                 if (!gameState.gameRunning) return;
 
-                const activeGuests = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'showering').length;
-                if (activeGuests >= (CONFIG.NUM_SHOWER_STALLS + 2) ) {
+                const activeGuests = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'showering' || g.status === 'waiting-laundry' || g.status === 'washing' || g.status === 'drying').length;
+                if (activeGuests >= (CONFIG.NUM_SHOWER_STALLS + 3) ) {
                     gameState.timers.guestSpawner = setTimeout(spawnGuest, 1500);
                     return;
                 }
 
                 const guestId = `guest-${gameState.nextIds.guest++}`;
+                const laundryChance = (gameState.currentEvent.effect?.laundryChance || 1) * 0.4;
+                const needsLaundry = Math.random() < laundryChance;
+                
                 const guest = {
                     id: guestId,
-                    status: 'waiting',
+                    status: needsLaundry ? 'waiting-laundry' : 'waiting',
                     requests: [],
                     patience: 100,
-                    mood: 'happy'
+                    mood: 'happy',
+                    needsLaundry: needsLaundry,
+                    laundryStage: needsLaundry ? 'wash' : null
                 };
                 startPatienceTimer(guest);
                 gameState.guests.push(guest);
@@ -509,7 +554,7 @@
                     if (!gameState.gameRunning) { clearInterval(patienceInterval); return; }
                     const g = gameState.guests.find(g => g.id === guest.id);
                     if (!g) { clearInterval(patienceInterval); return; }
-                    let patienceDrain = g.status === 'waiting' ? 1 : 1.5;
+                    let patienceDrain = (g.status === 'waiting' || g.status === 'waiting-laundry') ? 1 : 1.5;
                     
                     if (gameState.volunteersActive) {
                         patienceDrain *= 0.5;
@@ -562,6 +607,64 @@
                 if (typeof gtag === 'function') gtag('event', 'assign_guest_to_shower');
             }
 
+            function assignGuestToLaundry(guestId, machineId) {
+                const machine = gameState.laundryMachines.find(m => m.id === machineId);
+                const guest = gameState.guests.find(g => g.id === guestId);
+                
+                if (!machine || machine.status !== 'available' || !guest) return;
+                
+                const validAssignment = (guest.status === 'waiting-laundry' && guest.laundryStage === 'wash' && machine.type === 'wash') ||
+                                      (guest.status === 'need-dry' && guest.laundryStage === 'dry' && machine.type === 'dry');
+                
+                if (!validAssignment) return;
+
+                gameState.selectedGuestId = null;
+                
+                const newStatus = machine.type === 'wash' ? 'washing' : 'drying';
+                guest.status = newStatus;
+                clearInterval(guest.patienceTimer);
+                machine.status = 'occupied';
+                machine.guestId = guest.id;
+                
+                const difficulty = getDifficultySettings();
+                const cycleTime = (machine.type === 'wash' ? difficulty.washTime : difficulty.dryTime) / (gameState.currentEvent.effect?.laundrySpeed || 1);
+                
+                machine.timer = startProgress(cycleTime, p => machine.progress = p, () => finishLaundryCycle(machine.id));
+                updateGuestUI(guestId);
+                updateLaundryUI();
+                playSound('success');
+                if (typeof gtag === 'function') gtag('event', 'assign_guest_to_laundry', { machine: machine.type });
+            }
+
+            function finishLaundryCycle(machineId) {
+                const machine = gameState.laundryMachines.find(m => m.id === machineId);
+                if (!machine) return;
+                
+                const guest = gameState.guests.find(g => g.id === machine.guestId);
+                machine.status = 'dirty';
+                machine.guestId = null;
+                
+                if (guest) {
+                    if (machine.type === 'wash') {
+                        guest.status = 'need-dry';
+                        guest.laundryStage = 'dry';
+                        guest.patience = 100;
+                        startPatienceTimer(guest);
+                    } else if (machine.type === 'dry') {
+                        guest.status = 'requesting';
+                        guest.laundryStage = null;
+                        generateGuestRequests(guest);
+                        guest.patience = 100;
+                        startPatienceTimer(guest);
+                        gameState.score += CONFIG.POINTS_PER_LAUNDRY;
+                    }
+                    updateGuestUI(guest.id);
+                }
+                updateLaundryUI();
+                updateTopBarUI();
+                updateVolunteerButtonState();
+            }
+
             function finishShowering(showerId) {
                 const shower = gameState.showers.find(s => s.id === showerId);
                 if (!shower) return;
@@ -594,6 +697,26 @@
                 });
                 updateShowersUI();
                 if (typeof gtag === 'function') gtag('event', 'clean_shower');
+            }
+
+            function cleanLaundryMachine(machineId) {
+                const machine = gameState.laundryMachines.find(m => m.id === machineId);
+                if (!machine || machine.status !== 'dirty') return;
+                
+                machine.status = 'cleaning';
+                const difficulty = getDifficultySettings();
+                let cleanTime = difficulty.cleanTime / (gameState.currentEvent.effect?.cleaningSpeed || 1);
+                
+                if (gameState.volunteersActive) {
+                    cleanTime *= 0.3;
+                }
+                
+                machine.timer = startProgress(cleanTime, p => machine.progress = p, () => {
+                    machine.status = 'available';
+                    updateLaundryUI();
+                });
+                updateLaundryUI();
+                if (typeof gtag === 'function') gtag('event', 'clean_laundry');
             }
 
             function acceptSupplyDrop() {
@@ -714,6 +837,7 @@
                 event.preventDefault();
                 event.currentTarget.classList.remove('droppable');
                 if (gameState.dragged.type === 'guest' && dropZoneType === 'shower') assignGuestToShower(gameState.dragged.id, dropZoneId);
+                else if (gameState.dragged.type === 'guest' && dropZoneType === 'laundry') assignGuestToLaundry(gameState.dragged.id, dropZoneId);
                 else if (gameState.dragged.type === 'supply' && dropZoneType === 'bin') sortSupplyItem(gameState.dragged.id, dropZoneId);
             }
 
@@ -721,6 +845,7 @@
                 updateTopBarUI();
                 updateGuestUI();
                 updateShowersUI();
+                updateLaundryUI();
                 updateSupplyDropUI();
                 updateSupplyBinsUI();
                 updateVolunteerButtonState();
@@ -736,6 +861,7 @@
                 }
 
                 DOMElements.guestQueue.innerHTML = '';
+                DOMElements.laundryQueue.innerHTML = '';
                 DOMElements.requestsArea.innerHTML = '';
 
                 gameState.guests.forEach(guest => {
@@ -747,8 +873,14 @@
                     if (guest.status === 'waiting') {
                         parentEl = DOMElements.guestQueue;
                         className += ' guest';
-                        newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]}</span></div>
+                        newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]} 🚿</span></div>
                                 <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-green-500" style="width: ${guest.patience}%;"></div></div>`;
+                    } else if (guest.status === 'waiting-laundry' || guest.status === 'need-dry') {
+                        parentEl = DOMElements.laundryQueue;
+                        className += ' guest';
+                        const serviceIcon = guest.laundryStage === 'wash' ? '🫧' : '🔥';
+                        newHTML = `<div class="flex justify-between items-center pointer-events-none"><span class="font-bold">${moodEmoji} Guest #${guest.id.split('-')[1]} ${serviceIcon}</span></div>
+                                <div class="progress-bar mt-2 h-1.5"><div class="progress-bar-fill bg-blue-500" style="width: ${guest.patience}%;"></div></div>`;
                     } else if (guest.status === 'requesting') {
                         parentEl = DOMElements.requestsArea;
                         className += ' item-request-bubble';
@@ -765,7 +897,7 @@
                         element.id = guest.id;
                         element.className = className;
                         element.innerHTML = newHTML;
-                        if (guest.status === 'waiting') {
+                        if (guest.status === 'waiting' || guest.status === 'waiting-laundry' || guest.status === 'need-dry') {
                             element.draggable = true;
                             element.addEventListener('dragstart', e => handleDragStart(e, 'guest', guest.id));
                             element.addEventListener('dragend', handleDragEnd);
@@ -785,6 +917,8 @@
             function updateShowersUI() {
                 DOMElements.showerStallsArea.innerHTML = '';
                 const isGuestSelected = gameState.selectedGuestId !== null;
+                const selectedGuest = gameState.guests.find(g => g.id === gameState.selectedGuestId);
+                
                 gameState.showers.forEach(shower => {
                     const showerDiv = document.createElement('div');
                     showerDiv.id = shower.id;
@@ -792,10 +926,10 @@
                     switch (shower.status) {
                         case 'available':
                             classes += ' shower-stall bg-blue-50 border-blue-200';
-                            if (isGuestSelected) classes += ' tap-target';
+                            if (isGuestSelected && selectedGuest?.status === 'waiting') classes += ' tap-target';
                             content = `<span class="text-4xl pointer-events-none">🚿</span><span class="font-bold text-green-700 pointer-events-none">Available</span>`;
                             showerDiv.addEventListener('dragover', handleDragOver);
-                            showerDiv.addEventListener('dragenter', e => handleDragEnter(e, 'guest', true));
+                            showerDiv.addEventListener('dragenter', e => handleDragEnter(e, 'guest', selectedGuest?.status === 'waiting'));
                             showerDiv.addEventListener('dragleave', handleDragLeave);
                             showerDiv.addEventListener('drop', e => handleDrop(e, 'shower', shower.id));
                             break;
@@ -806,6 +940,57 @@
                     showerDiv.className = classes;
                     showerDiv.innerHTML = content;
                     DOMElements.showerStallsArea.appendChild(showerDiv);
+                });
+            }
+
+            function updateLaundryUI() {
+                const isGuestSelected = gameState.selectedGuestId !== null;
+                const selectedGuest = gameState.guests.find(g => g.id === gameState.selectedGuestId);
+                
+                gameState.laundryMachines.forEach(machine => {
+                    const machineDiv = document.getElementById(machine.id);
+                    if (!machineDiv) return;
+                    
+                    let content = '', classes = 'laundry-machine p-3 rounded-lg border-2 text-center transition-all';
+                    
+                    const canAcceptGuest = selectedGuest && 
+                        ((selectedGuest.status === 'waiting-laundry' && selectedGuest.laundryStage === 'wash' && machine.type === 'wash') ||
+                         (selectedGuest.status === 'need-dry' && selectedGuest.laundryStage === 'dry' && machine.type === 'dry'));
+                    
+                    switch (machine.status) {
+                        case 'available':
+                            const bgColor = machine.type === 'wash' ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200';
+                            const textColor = machine.type === 'wash' ? 'text-blue-700' : 'text-orange-700';
+                            classes += ` ${bgColor}`;
+                            if (isGuestSelected && canAcceptGuest) classes += ' tap-target';
+                            const emoji = machine.type === 'wash' ? '🫧' : '🔥';
+                            const name = machine.type === 'wash' ? 'Washing Machine' : 'Dryer';
+                            content = `<span class="text-3xl">${emoji}</span><div class="font-bold ${textColor}">${name}</div><div class="text-sm ${textColor}">Available</div>`;
+                            machineDiv.addEventListener('dragover', handleDragOver);
+                            machineDiv.addEventListener('dragenter', e => handleDragEnter(e, 'guest', canAcceptGuest));
+                            machineDiv.addEventListener('dragleave', handleDragLeave);
+                            machineDiv.addEventListener('drop', e => handleDrop(e, 'laundry', machine.id));
+                            break;
+                        case 'occupied':
+                            const occupiedBg = machine.type === 'wash' ? 'bg-blue-100 border-blue-300' : 'bg-orange-100 border-orange-300';
+                            const occupiedText = machine.type === 'wash' ? 'text-blue-800' : 'text-orange-800';
+                            const occupiedEmoji = machine.type === 'wash' ? '💧' : '♨️';
+                            const occupiedAction = machine.type === 'wash' ? 'Washing' : 'Drying';
+                            classes += ` ${occupiedBg}`;
+                            content = `<span class="text-3xl">${occupiedEmoji}</span><div class="font-bold ${occupiedText}">${occupiedAction}</div><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill ${machine.type === 'wash' ? 'bg-blue-500' : 'bg-orange-500'}" style="width: ${machine.progress}%;"></div></div>`;
+                            break;
+                        case 'dirty':
+                            classes += ' bg-red-50 border-red-200 dirty';
+                            content = `<span class="text-3xl">🧹</span><div class="font-bold text-red-700">Click to Clean</div><div class="text-sm text-red-600">Needs Maintenance</div>`;
+                            break;
+                        case 'cleaning':
+                            classes += ' bg-indigo-50 border-indigo-200';
+                            content = `<span class="text-3xl">✨</span><div class="font-bold text-indigo-700">Cleaning</div><div class="progress-bar h-2 mt-2"><div class="progress-bar-fill bg-indigo-500" style="width: ${machine.progress}%;"></div></div>`;
+                            break;
+                    }
+                    
+                    machineDiv.className = classes;
+                    machineDiv.innerHTML = content;
                 });
             }
 
@@ -885,6 +1070,13 @@
                 }
             });
 
+            DOMElements.laundryQueue.addEventListener('click', e => {
+                const targetGuest = e.target.closest('.guest');
+                if (targetGuest) {
+                    selectGuest(targetGuest.id);
+                }
+            });
+
             DOMElements.showerStallsArea.addEventListener('click', e => {
                 const target = e.target.closest('.shower-stall');
                 if (!target) return;
@@ -896,8 +1088,19 @@
                 }
             });
 
+            DOMElements.laundryMachinesArea.addEventListener('click', e => {
+                const target = e.target.closest('.laundry-machine');
+                if (!target) return;
+
+                if (target.classList.contains('dirty')) {
+                    cleanLaundryMachine(target.id);
+                } else if (target.classList.contains('tap-target') && gameState.selectedGuestId) {
+                    assignGuestToLaundry(gameState.selectedGuestId, target.id);
+                }
+            });
+
             DOMElements.gameContainer.addEventListener('click', e => {
-                if (e.target.closest('.station') && !e.target.closest('.guest, .shower-stall, .item-request-bubble') && gameState.selectedGuestId) {
+                if (e.target.closest('.station') && !e.target.closest('.guest, .shower-stall, .laundry-machine, .item-request-bubble') && gameState.selectedGuestId) {
                     selectGuest(gameState.selectedGuestId);
                 }
             });
