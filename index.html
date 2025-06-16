@@ -51,6 +51,7 @@
                 <div class="text-center"><span class="text-xs md:text-sm" style="color: var(--text-light);">Upset</span>
                     <p id="upset-guests-display" class="text-base md:text-xl font-semibold text-red-600">0 / 5</p>
                 </div>
+                <button id="volunteer-callout-btn" class="btn-volunteer">Call Volunteers (50pts)</button>
                 <button id="leaderboard-btn" class="btn-primary ml-2">Leaderboard</button>
             </div>
         </header>
@@ -103,6 +104,7 @@
                         on their request to give it.</li>
                     <li>Serve guests before they become angry (😠)! Watch the <b class="text-yellow-600">Daily
                             Update</b> for new challenges.</li>
+                    <li><b class="text-orange-600">Call Volunteers</b> (50 points) when overwhelmed to get help with chores!</li>
                 </ul>
             </div>
             <button id="start-game-btn" class="btn-primary w-full">Start Day 1</button>
@@ -123,6 +125,14 @@
         </div>
     </div>
 
+    <div id="volunteer-notification" class="volunteer-notification hidden">
+        <div class="volunteer-notification-content">
+            <div class="volunteer-animation">🙋‍♀️🙋‍♂️</div>
+            <h3>Volunteers Arrive!</h3>
+            <p>Community helpers are pitching in to clean and organize!</p>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const DOMElements = {
@@ -136,6 +146,8 @@
                 restartGameBtn: document.getElementById('restart-game-btn'), acceptSupplyDropBtn: document.getElementById('accept-supply-drop'),
                 supplyDropArea: document.getElementById('supply-drop-area'), supplyBins: document.getElementById('supply-bins'),
                 gameContainer: document.getElementById('game-container'),
+                volunteerCalloutBtn: document.getElementById('volunteer-callout-btn'),
+                volunteerNotification: document.getElementById('volunteer-notification')
             };
 
             const leaderboardUrl = 'https://script.google.com/macros/s/AKfycbzkQztKIezgMgpjqRBAyFstUFmkctO_cV2KYpulTEw-vCM3C_OgBqp0OBmMvbALkrln/exec';
@@ -150,7 +162,7 @@
                 MAX_STRESS: 100, MAX_UPSET_GUESTS: 5, NUM_SHOWER_STALLS: 2, BASE_SHOWER_TIME: 10000,
                 BASE_CLEAN_TIME: 6000, BASE_GUEST_PATIENCE: 30000, POINTS_PER_SHOWER: 50,
                 POINTS_PER_ITEM: 25, SUPPLY_DROP_SIZE: 4, BASE_GUEST_ARRIVAL_MIN: 2500, BASE_GUEST_ARRIVAL_MAX: 3500,
-                BASE_TWO_ITEM_CHANCE: 0.2
+                BASE_TWO_ITEM_CHANCE: 0.2, VOLUNTEER_COST: 50, VOLUNTEER_DURATION: 8000
             };
             const ITEM_TYPES = {
                 shirts: { emoji: '👕', name: 'Shirt' },
@@ -295,7 +307,9 @@
                     timers: { gameLoop: null, guestSpawner: null, patience: [] },
                     dragged: { type: null, id: null, element: null },
                     servicedGuestsCount: 0,
-                    selectedGuestId: null
+                    selectedGuestId: null,
+                    volunteersActive: false,
+                    volunteerEndTime: null
                 };
                 for (let i = 0; i < CONFIG.NUM_SHOWER_STALLS; i++) {
                     gameState.showers.push({ id: `shower-${i}`, status: 'available', timer: null, progress: 0 });
@@ -323,6 +337,64 @@
                 if (audio) audio.volume = 0.2, audio.play();
             }
 
+            function callVolunteers() {
+                if (gameState.score < CONFIG.VOLUNTEER_COST || gameState.volunteersActive) return;
+                
+                gameState.score -= CONFIG.VOLUNTEER_COST;
+                gameState.volunteersActive = true;
+                gameState.volunteerEndTime = Date.now() + CONFIG.VOLUNTEER_DURATION;
+                
+                gameState.showers.filter(s => s.status === 'dirty').forEach(shower => {
+                    shower.status = 'cleaning';
+                    shower.timer = startProgress(1000, p => shower.progress = p, () => {
+                        shower.status = 'available';
+                        updateShowersUI();
+                    });
+                });
+
+                gameState.suppliesToSort.forEach(supply => {
+                    gameState.inventory[supply.type]++;
+                });
+                gameState.suppliesToSort = [];
+
+                gameState.stress = Math.max(0, gameState.stress - 30);
+
+                showVolunteerNotification();
+                updateVolunteerButtonState();
+                updateAllUI();
+
+                setTimeout(() => {
+                    gameState.volunteersActive = false;
+                    gameState.volunteerEndTime = null;
+                    updateVolunteerButtonState();
+                }, CONFIG.VOLUNTEER_DURATION);
+            }
+
+            function showVolunteerNotification() {
+                DOMElements.volunteerNotification.classList.remove('hidden');
+                setTimeout(() => {
+                    DOMElements.volunteerNotification.classList.add('hidden');
+                }, 3000);
+            }
+
+            function updateVolunteerButtonState() {
+                const canAfford = gameState.score >= CONFIG.VOLUNTEER_COST;
+                const isActive = gameState.volunteersActive;
+                
+                DOMElements.volunteerCalloutBtn.disabled = !canAfford || isActive;
+                
+                if (isActive) {
+                    DOMElements.volunteerCalloutBtn.textContent = 'Volunteers Helping...';
+                    DOMElements.volunteerCalloutBtn.classList.add('btn-volunteer-active');
+                } else if (!canAfford) {
+                    DOMElements.volunteerCalloutBtn.textContent = `Need ${CONFIG.VOLUNTEER_COST}pts`;
+                    DOMElements.volunteerCalloutBtn.classList.remove('btn-volunteer-active');
+                } else {
+                    DOMElements.volunteerCalloutBtn.textContent = `Call Volunteers (${CONFIG.VOLUNTEER_COST}pts)`;
+                    DOMElements.volunteerCalloutBtn.classList.remove('btn-volunteer-active');
+                }
+            }
+
             function startGame() {
                 initializeGameState();
                 gameState.gameRunning = true;
@@ -337,6 +409,7 @@
                 gameState.timers.guestSpawner = setTimeout(spawnGuest, (Math.random() * difficulty.guestArrivalMax + difficulty.guestArrivalMin));
                 gameState.timers.gameLoop = setInterval(gameLoop, 100);
                 DOMElements.acceptSupplyDropBtn.disabled = false;
+                updateVolunteerButtonState();
                 if (typeof gtag === 'function') gtag('event', 'game_start');
             }
 
@@ -369,6 +442,11 @@
                 let stressIncrease = gameState.guests.filter(g => g.status === 'waiting' || g.status === 'requesting').length * 0.05 +
                     gameState.showers.filter(s => s.status === 'dirty').length * 0.1 +
                     gameState.suppliesToSort.length * 0.03;
+                
+                if (gameState.volunteersActive) {
+                    stressIncrease *= 0.3;
+                }
+                
                 gameState.stress = Math.min(CONFIG.MAX_STRESS, gameState.stress + stressIncrease);
                 gameState.stress = Math.max(0, gameState.stress - 0.04);
                 updateTopBarUI();
@@ -421,7 +499,12 @@
                     if (!gameState.gameRunning) { clearInterval(patienceInterval); return; }
                     const g = gameState.guests.find(g => g.id === guest.id);
                     if (!g) { clearInterval(patienceInterval); return; }
-                    const patienceDrain = g.status === 'waiting' ? 1 : 1.5;
+                    let patienceDrain = g.status === 'waiting' ? 1 : 1.5;
+                    
+                    if (gameState.volunteersActive) {
+                        patienceDrain *= 0.5;
+                    }
+                    
                     g.patience = Math.max(0, g.patience - patienceDrain);
                     if (g.patience <= 0) {
                         guestLeavesUpset(g.id);
@@ -482,7 +565,7 @@
                     startPatienceTimer(guest);
                     updateGuestUI(guest.id);
                 }
-                updateShowersUI(); updateTopBarUI();
+                updateShowersUI(); updateTopBarUI(); updateVolunteerButtonState();
             }
 
             function cleanShower(showerId) {
@@ -490,7 +573,12 @@
                 if (!shower || shower.status !== 'dirty') return;
                 shower.status = 'cleaning';
                 const difficulty = getDifficultySettings();
-                const cleanTime = difficulty.cleanTime / (gameState.currentEvent.effect?.cleaningSpeed || 1);
+                let cleanTime = difficulty.cleanTime / (gameState.currentEvent.effect?.cleaningSpeed || 1);
+                
+                if (gameState.volunteersActive) {
+                    cleanTime *= 0.3;
+                }
+                
                 shower.timer = startProgress(cleanTime, p => shower.progress = p, () => {
                     shower.status = 'available'; updateShowersUI();
                 });
@@ -530,7 +618,7 @@
                     playSound('fail');
                     if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'incorrect', type: item.type });
                 }
-                updateSupplyDropUI(); updateSupplyBinsUI(); updateTopBarUI();
+                updateSupplyDropUI(); updateSupplyBinsUI(); updateTopBarUI(); updateVolunteerButtonState();
             }
 
             function generateGuestRequests(guest) {
@@ -578,7 +666,7 @@
                     setTimeout(() => requestBubble?.classList.remove('deny'), 400);
                     playSound('fail');
                 }
-                updateSupplyBinsUI(); updateTopBarUI();
+                updateSupplyBinsUI(); updateTopBarUI(); updateVolunteerButtonState();
             }
 
             function startProgress(duration, onUpdate, onComplete) {
@@ -625,6 +713,7 @@
                 updateShowersUI();
                 updateSupplyDropUI();
                 updateSupplyBinsUI();
+                updateVolunteerButtonState();
             }
 
             function updateGuestUI(guestIdToUpdate, remove = false) {
@@ -777,6 +866,7 @@
             DOMElements.startGameBtn.addEventListener('click', startGame);
             DOMElements.restartGameBtn.addEventListener('click', startGame);
             DOMElements.acceptSupplyDropBtn.addEventListener('click', acceptSupplyDrop);
+            DOMElements.volunteerCalloutBtn.addEventListener('click', callVolunteers);
 
             DOMElements.guestQueue.addEventListener('click', e => {
                 const targetGuest = e.target.closest('.guest');
