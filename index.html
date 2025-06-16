@@ -519,7 +519,7 @@
                 }
 
                 const guestId = `guest-${gameState.nextIds.guest++}`;
-                const laundryChance = (gameState.currentEvent.effect?.laundryChance || 1) * 0.4;
+                const laundryChance = (gameState.currentEvent.effect?.laundryChance || 1) * 0.2;
                 const needsLaundry = Math.random() < laundryChance;
                 
                 const guest = {
