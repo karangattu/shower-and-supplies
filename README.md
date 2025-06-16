@@ -1,39 +1,18 @@
 # Shower & Supplies Game
 
-A web-based game inspired by the real-life operations of Hope's Corner, where you manage a shower and supplies for guests in need. Adapt to daily events, keep stress low, and serve as many guests as possible!
-
-## Gameplay
-
-- **Accept Supply Drops:** Click "Accept Donations" to receive new items, then drag them to the correct supply bins.
-- **Manage Guests:** Drag waiting guests (😊) to available shower stalls.
-- **Clean Showers:** Click dirty showers (🧹) to clean them and make them available again.
-- **Fulfill Requests:** After showering, guests will request specific items. Click the requested item icon to give it to them (if you have it in stock).
-- **Call Volunteers:** When overwhelmed, click "Call Volunteers" (costs 50 points) to instantly clean all dirty showers, auto-sort all unsorted supplies, and reduce stress for a short time. Volunteers can only be called when you have enough points and are not already active.
-- **Watch Out:** Serve guests before they become upset (😠). Keep an eye on the stress bar and daily events for new challenges.
+Welcome to the Hope's Corner Shower & Supplies Game! Help guests by managing showers, supplies, and now a full laundry station. Call volunteers when things get busy—they'll help with showers, laundry, and supplies!
 
 ## Features
-
-- Dynamic daily events that change gameplay (e.g., rain, supply shortages, bonus points).
-- Combo/streak system for efficient play.
-- Drag-and-drop interface for supplies and guests.
-- Progress bars for stress, guest patience, and cleaning.
-- Sound effects and visual feedback.
-- **Volunteers Needed Feature:** Call in volunteers to help when things get tough. Volunteers instantly clean all dirty showers, auto-sort all unsorted supplies, and reduce your stress for 8 seconds. The button is disabled while volunteers are active or if you don't have enough points.
+- **Shower Station:** Assign guests to available showers, clean dirty stalls, and keep the line moving.
+- **Supply Station:** Accept donations, sort supplies, and fulfill guest requests for items.
+- **Laundry Station:** Guests may arrive to do laundry. Assign them to washers/dryers, and complete their laundry cycle.
+- **Volunteers:** Call volunteers (costs points) to instantly help with cleaning showers, finishing laundry cycles, and sorting supplies.
+- **Leaderboard:** Compete for the highest score!
 
 ## How to Play
+- **Assign guests** to showers or laundry machines by tapping or dragging.
+- **Sort supplies** and fulfill guest requests after their shower or laundry.
+- **Call volunteers** when overwhelmed—they'll help with all chores!
+- **Keep stress low** and avoid too many upset guests to keep the day going.
 
-1. Start the day and read the daily update for special events.
-2. Accept and sort supply drops to stock your inventory.
-3. Drag guests to showers and clean stalls as needed.
-4. Fulfill guest requests for supplies after their shower.
-5. Call volunteers if you get overwhelmed!
-6. Try to keep stress low and avoid upsetting too many guests!
-
-## Credits
-
-- Game design and code: Karan
-- Inspired by the work of Hope's Corner
-
----
-
-*This project is for educational and demonstration purposes.*
+Enjoy making a difference at Hope's Corner!
