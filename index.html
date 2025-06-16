@@ -75,7 +75,7 @@
             </div>
 
             <div id="supply-station" class="station">
-                <div class="station-header"><span class="station-icon">🎁</span>
+                <div class="station-header"><span class="station-icon">📦</span>
                     <h2 class="text-lg font-semibold">Supplies</h2>
                 </div>
                 <button id="accept-supply-drop" class="btn-primary w-full mb-2 flex-shrink-0">Accept Donations</button>
@@ -198,6 +198,21 @@
                     guestArrivalMax: CONFIG.BASE_GUEST_ARRIVAL_MAX * 1.5 * arrivalMultiplier,
                     twoItemChance: twoItemChance
                 };
+            }
+
+            function showGuestTapHint() {
+                if (localStorage.getItem('guestTapHintShown')) return;
+                const firstGuest = DOMElements.guestQueue.querySelector('.guest');
+                if (!firstGuest) return;
+                let hint = document.createElement('div');
+                hint.className = 'guest-tap-hint';
+                hint.textContent = 'Tap to select!';
+                firstGuest.style.position = 'relative';
+                firstGuest.appendChild(hint);
+                setTimeout(() => {
+                    hint.remove();
+                    localStorage.setItem('guestTapHintShown', '1');
+                }, 2500);
             }
 
             function fetchLeaderboard() {
