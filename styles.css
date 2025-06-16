@@ -389,20 +389,31 @@ body {
   }
 }
 
-/* Leaderboard table styles */
-.leaderboard-table td, .leaderboard-table th {
-  padding: 0.5rem 1rem;
-  text-align: center;
+@media (max-width: 600px) {
+  .btn-volunteer {
+    font-size: 1.1rem;
+    padding: 1rem 1.2rem;
+    min-width: 48vw;
+    border-radius: 0.75rem;
+  }
+
+  .volunteer-notification {
+    min-width: 0;
+    width: 90vw;
+    left: 5vw;
+    transform: none;
+    font-size: 1rem;
+    padding: 1rem 0.5rem;
+    border-radius: 1rem;
+  }
+  .volunteer-notification-content {
+    gap: 0.25rem;
+  }
+  .volunteer-animation {
+    font-size: 2rem;
+  }
 }
-.leaderboard-table tr:nth-child(1) td {
-  font-weight: bold;
-  color: #ffd700;
-}
-.leaderboard-table tr:nth-child(2) td {
-  font-weight: bold;
-  color: #c0c0c0;
-}
-.leaderboard-table tr:nth-child(3) td {
-  font-weight: bold;
-  color: #cd7f32;
+
+.volunteer-notification {
+  z-index: 9999;
 }
