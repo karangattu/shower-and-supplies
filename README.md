@@ -8,6 +8,7 @@ A web-based game inspired by the real-life operations of Hope's Corner, where yo
 - **Manage Guests:** Drag waiting guests (😊) to available shower stalls.
 - **Clean Showers:** Click dirty showers (🧹) to clean them and make them available again.
 - **Fulfill Requests:** After showering, guests will request specific items. Click the requested item icon to give it to them (if you have it in stock).
+- **Call Volunteers:** When overwhelmed, click "Call Volunteers" (costs 50 points) to instantly clean all dirty showers, auto-sort all unsorted supplies, and reduce stress for a short time. Volunteers can only be called when you have enough points and are not already active.
 - **Watch Out:** Serve guests before they become upset (😠). Keep an eye on the stress bar and daily events for new challenges.
 
 ## Features
@@ -17,6 +18,7 @@ A web-based game inspired by the real-life operations of Hope's Corner, where yo
 - Drag-and-drop interface for supplies and guests.
 - Progress bars for stress, guest patience, and cleaning.
 - Sound effects and visual feedback.
+- **Volunteers Needed Feature:** Call in volunteers to help when things get tough. Volunteers instantly clean all dirty showers, auto-sort all unsorted supplies, and reduce your stress for 8 seconds. The button is disabled while volunteers are active or if you don't have enough points.
 
 ## How to Play
 
@@ -24,7 +26,8 @@ A web-based game inspired by the real-life operations of Hope's Corner, where yo
 2. Accept and sort supply drops to stock your inventory.
 3. Drag guests to showers and clean stalls as needed.
 4. Fulfill guest requests for supplies after their shower.
-5. Try to keep stress low and avoid upsetting too many guests!
+5. Call volunteers if you get overwhelmed!
+6. Try to keep stress low and avoid upsetting too many guests!
 
 ## Credits
 
