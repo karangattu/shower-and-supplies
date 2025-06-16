@@ -505,10 +505,9 @@ body {
   background: #f9fafb;
   border-radius: 0.75rem;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.07);
+  box-shadow: 0 2px 12px rgba(59,130,246,0.07);
 }
-#leaderboard-table-container th,
-#leaderboard-table-container td {
+#leaderboard-table-container th, #leaderboard-table-container td {
   padding: 0.75rem 1rem;
   text-align: left;
 }
@@ -541,63 +540,4 @@ body {
 }
 #leaderboard-table-container table {
   margin-bottom: 0.5rem;
-}
-
-.laundry-machines-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-.laundry-machine {
-  background: #f3f4f6;
-  border: 2px solid #b3e5fc;
-  border-radius: 0.75rem;
-  padding: 1rem 0.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 90px;
-  position: relative;
-  transition: box-shadow 0.2s, border-color 0.2s;
-}
-.laundry-machine.available {
-  border-color: #4caf50;
-  background: #e8f5e9;
-}
-.laundry-machine.washing {
-  border-color: #2196f3;
-  background: #e3f2fd;
-}
-.laundry-machine.drying {
-  border-color: #ffb300;
-  background: #fffde7;
-}
-.laundry-machine.ready {
-  border-color: #4caf50;
-  background: #e8f5e9;
-  box-shadow: 0 0 8px 2px #a5d6a7;
-}
-.laundry-machine .machine-icon {
-  font-size: 2.2rem;
-  margin-bottom: 0.5rem;
-}
-.laundry-machine .machine-status {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-}
-.laundry-machine .progress-bar {
-  margin-top: 0.5rem;
-  height: 8px;
-  width: 90%;
-}
-@media (max-width: 600px) {
-  .laundry-machines-grid {
-    grid-template-columns: 1fr;
-  }
-  .laundry-machine {
-    min-height: 70px;
-    padding: 0.7rem 0.3rem;
-  }
 }
