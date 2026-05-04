@@ -99,34 +99,36 @@
                     <h2 class="text-lg font-semibold">Supplies</h2>
                 </div>
                 <button id="accept-supply-drop" class="btn-primary w-full mb-2 flex-shrink-0">Accept Donations</button>
-                <p class="text-xs text-center text-gray-500 mb-2">Drag items from here to the bins below</p>
+                <p class="text-xs text-center text-gray-500 mb-2">Tap an item, then a bin. Dragging works too.</p>
                 <div id="supply-drop-area" class="mb-4 flex-shrink-0"></div>
                 <div id="supply-bins" class="supply-bins-grid"></div>
             </div>
         </div>
     </div>
 
+    <div id="orientation-nudge" aria-live="polite">Volunteers: rotate to landscape for the widest play field.</div>
+
     <div id="modal-overlay" class="hidden">
         <div id="start-modal" class="modal">
             <h1 class="poster-title">Shower & Supplies</h1>
-            <p class="poster-subtitle">Join Hope's Corner in providing warm showers, laundry services, and essential supplies to our community. Every action counts!</p>
+            <p class="poster-subtitle">Join Hope's Corner in providing warm showers, laundry, and essential supplies. Every action counts!</p>
             
             <div class="how-to-play-grid">
                 <div class="instruction-card">
                     <span class="instruction-icon">🚿</span>
-                    <p class="instruction-text"><b>Manage Showers:</b> Assign guests to stalls and keep them clean for the next visitor.</p>
+                    <p class="instruction-text"><b>Manage Showers:</b> Assign guests, clean stalls, and keep the line moving.</p>
                 </div>
                 <div class="instruction-card">
                     <span class="instruction-icon">🧺</span>
-                    <p class="instruction-text"><b>Laundry Service:</b> Wash and dry guest clothing to help them feel their best.</p>
+                    <p class="instruction-text"><b>Laundry Service:</b> Wash, dry, then fulfill each guest's supply request.</p>
                 </div>
                 <div class="instruction-card">
                     <span class="instruction-icon">📦</span>
-                    <p class="instruction-text"><b>Supply Sort:</b> Organize donations and fulfill guest requests for essentials.</p>
+                    <p class="instruction-text"><b>Supply Sort:</b> Tap or drag donations into the matching bins.</p>
                 </div>
                 <div class="instruction-card">
                     <span class="instruction-icon">🙋‍♂️</span>
-                    <p class="instruction-text"><b>Call Help:</b> Use your points to bring in volunteers when things get busy.</p>
+                    <p class="instruction-text"><b>Call Help:</b> Spend points to bring in volunteers during a rush.</p>
                 </div>
             </div>
 
@@ -368,6 +370,7 @@
                     dragged: { type: null, id: null, element: null },
                     servicedGuestsCount: 0,
                     selectedGuestId: null,
+                    selectedSupplyId: null,
                     volunteersActive: false,
                     volunteerEndTime: null
                 };
@@ -391,7 +394,17 @@
                 updateLaundryUI();
             }
 
+            function selectSupply(supplyId) {
+                gameState.selectedSupplyId = gameState.selectedSupplyId === supplyId ? null : supplyId;
+                updateSupplyDropUI();
+                updateSupplyBinsUI();
+            }
+
             function playSound(type) {
+                if (navigator.vibrate) {
+                    navigator.vibrate(type === 'success' ? 15 : [25, 30, 25]);
+                }
+
                 let audio;
                 if (type === 'success') {
                     audio = new Audio('https://cdn.freesound.org/previews/654/654321_12315704-lq.mp3');
@@ -399,7 +412,10 @@
                     audio = new Audio('https://cdn.freesound.org/previews/672/672085_14040168-lq.mp3');
                     audio.playbackRate = 0.7;
                 }
-                if (audio) audio.volume = 0.2, audio.play();
+                if (audio) {
+                    audio.volume = 0.2;
+                    audio.play().catch(() => {});
+                }
             }
 
             function callVolunteers() {
@@ -479,7 +495,7 @@
                 renderSupplyBins();
                 updateAllUI();
                 const difficulty = getDifficultySettings();
-                gameState.timers.guestSpawner = setTimeout(spawnGuest, (Math.random() * difficulty.guestArrivalMax + difficulty.guestArrivalMin));
+                gameState.timers.guestSpawner = setTimeout(spawnGuest, Math.min(1000, difficulty.guestArrivalMin));
                 gameState.timers.gameLoop = setInterval(gameLoop, 100);
                 DOMElements.acceptSupplyDropBtn.disabled = false;
                 updateVolunteerButtonState();
@@ -503,7 +519,7 @@
                 if (gameState.score > 0) {
                     promptAndSubmitScore(gameState.score);
                 } else {
-                    DOMElements.leaderboardModal.classList.add('hidden');
+                    leaderboardModal.classList.add('hidden');
                     DOMElements.startModal.classList.add('hidden');
                     DOMElements.gameOverModal.classList.remove('hidden');
                     DOMElements.modalOverlay.classList.remove('hidden');
@@ -585,6 +601,7 @@
                     }
                     
                     g.patience = Math.max(0, g.patience - patienceDrain);
+                    updateGuestPatienceDisplay(g);
                     if (g.patience <= 0) {
                         guestLeavesUpset(g.id);
                     } else {
@@ -596,6 +613,12 @@
                 }, difficulty.guestPatience / 100 * (gameState.currentEvent.effect?.guestPatience || 1));
                 guest.patienceTimer = patienceInterval;
                 gameState.timers.patience.push(patienceInterval);
+            }
+
+            function updateGuestPatienceDisplay(guest) {
+                const guestElement = document.getElementById(guest.id);
+                const progressFill = guestElement?.querySelector('.progress-bar-fill');
+                if (progressFill) progressFill.style.width = `${guest.patience}%`;
             }
 
             function guestLeavesUpset(guestId) {
@@ -746,10 +769,9 @@
             function acceptSupplyDrop() {
                 DOMElements.acceptSupplyDropBtn.disabled = true;
                 const supplyShortage = gameState.currentEvent.effect?.supplyShortage;
-                const itemKeys = Object.keys(ITEM_TYPES);
+                const itemKeys = Object.keys(ITEM_TYPES).filter(type => type !== supplyShortage);
                 for (let i = 0; i < CONFIG.SUPPLY_DROP_SIZE; i++) {
                     let type = itemKeys[Math.floor(Math.random() * itemKeys.length)];
-                    if (supplyShortage === type) continue;
                     gameState.suppliesToSort.push({ id: `supply-${gameState.nextIds.supply++}`, type });
                 }
                 updateSupplyDropUI();
@@ -765,6 +787,7 @@
                     let points = 15;
                     gameState.score += points;
                     gameState.suppliesToSort.splice(supplyIndex, 1);
+                    if (gameState.selectedSupplyId === supplyId) gameState.selectedSupplyId = null;
                     playSound('success');
                     if (typeof gtag === 'function') gtag('event', 'sort_supply', { result: 'correct', type: item.type });
                 } else {
@@ -1019,16 +1042,26 @@
             }
 
             function updateSupplyDropUI() {
-                DOMElements.supplyDropArea.innerHTML = gameState.suppliesToSort.map(s => `<div id="${s.id}" draggable="true" data-type="${s.type}" class="supply-item">${ITEM_TYPES[s.type].emoji}</div>`).join('');
+                DOMElements.supplyDropArea.innerHTML = gameState.suppliesToSort.map(s => {
+                    const selectedClass = s.id === gameState.selectedSupplyId ? ' selected' : '';
+                    return `<div id="${s.id}" draggable="true" data-type="${s.type}" class="supply-item${selectedClass}" role="button" tabindex="0" aria-label="${ITEM_TYPES[s.type].name}">${ITEM_TYPES[s.type].emoji}</div>`;
+                }).join('');
                 DOMElements.supplyDropArea.querySelectorAll('.supply-item').forEach(el => {
                     el.addEventListener('dragstart', e => handleDragStart(e, 'supply', el.id));
                     el.addEventListener('dragend', handleDragEnd);
+                    el.addEventListener('click', () => selectSupply(el.id));
+                    el.addEventListener('keydown', e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            selectSupply(el.id);
+                        }
+                    });
                 });
             }
 
             function renderSupplyBins() {
                 DOMElements.supplyBins.innerHTML = Object.keys(ITEM_TYPES).map(type => `
-                <div class="supply-bin p-2 rounded-lg border-2 text-center transition-all" data-type="${type}">
+                <div class="supply-bin p-2 rounded-lg border-2 text-center transition-all" data-type="${type}" role="button" tabindex="0" aria-label="${ITEM_TYPES[type].name} bin">
                     <span class="text-2xl">${ITEM_TYPES[type].emoji}</span><h3 class="text-xs font-bold">${ITEM_TYPES[type].name}</h3><p id="${type}-stock" class="text-lg font-bold">0</p>
                 </div>`).join('');
                 DOMElements.supplyBins.querySelectorAll('.supply-bin').forEach(bin => {
@@ -1036,6 +1069,15 @@
                     bin.addEventListener('dragenter', e => handleDragEnter(e, 'supply', true));
                     bin.addEventListener('dragleave', handleDragLeave);
                     bin.addEventListener('drop', e => handleDrop(e, 'bin', bin.dataset.type));
+                    bin.addEventListener('click', () => {
+                        if (gameState.selectedSupplyId) sortSupplyItem(gameState.selectedSupplyId, bin.dataset.type);
+                    });
+                    bin.addEventListener('keydown', e => {
+                        if ((e.key === 'Enter' || e.key === ' ') && gameState.selectedSupplyId) {
+                            e.preventDefault();
+                            sortSupplyItem(gameState.selectedSupplyId, bin.dataset.type);
+                        }
+                    });
                 });
             }
 
@@ -1043,6 +1085,8 @@
                 Object.keys(ITEM_TYPES).forEach(type => {
                     const stockEl = document.getElementById(`${type}-stock`);
                     if (stockEl) stockEl.textContent = gameState.inventory[type];
+                    const binEl = DOMElements.supplyBins.querySelector(`.supply-bin[data-type="${type}"]`);
+                    if (binEl) binEl.classList.toggle('supply-tap-target', Boolean(gameState.selectedSupplyId));
                 });
             }
 
