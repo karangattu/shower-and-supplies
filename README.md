@@ -11,11 +11,3 @@ Run a volunteer shift in a browser game inspired by [Hope’s Corner’s Shower 
 - Use **Pause** for a break or to review the controls. The shift ends at 100% stress or when five guests leave after waiting too long.
 
 The game animates active equipment and volunteers. It shows still frames when reduced motion is enabled on your device.
-
-## Run locally
-
-Use `npm ci` to install the test dependencies. Run `node tests/static-server.js` and open [the local game](http://127.0.0.1:41731). To run the Playwright tests, install Chromium with `npx playwright install chromium`, then run `npm test`.
-
-## Credits
-
-Game design and code by Karan. The illustrations and sprites in [assets](assets/) were made for this game with ImageGen. The [art prompts](assets/art-prompts.md) document each illustration. The Hope’s Corner logo comes from the organization. This game is for educational and demonstration purposes.
