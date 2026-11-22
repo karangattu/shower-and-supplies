@@ -4,6 +4,8 @@ Run a volunteer shift in a browser game inspired by [Hope’s Corner’s Shower 
 
 ## Play
 
+On small screens, use the **Guests**, **Services**, and **Supplies** buttons at the bottom of the screen. Tap a guest to open Services and choose a station.
+
 - Use the action on a guest’s card to start their next service. You can also select the guest and then select a station, or drag the guest on a laptop.
 - Clean a stall or machine after each use. Some guests come straight for supplies. Select each requested item on their card.
 - Accept donations and select an item, then select its matching bin. Dragging items to bins also works.

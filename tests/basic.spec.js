@@ -27,6 +27,10 @@ test('plays a shower, cleans the stall, and fills a request on a laptop', async 
     await expect(page.locator('.instruction-card')).toHaveCount(4);
     await expect(page.getByRole('img', { name: 'Hope’s Corner', exact: true })).toBeVisible();
     await startGame(page);
+    await expect(page.getByRole('navigation', { name: 'Game stations' })).toBeHidden();
+    for (const id of ['guest-station', 'services-panel', 'supply-station']) {
+        await expect(page.locator('#' + id)).toBeVisible();
+    }
 
     const shower = page.locator('#shower-0');
     const guest = page.locator('#guest-1');
@@ -181,16 +185,28 @@ test.describe('Touch gameplay', () => {
         await page.clock.runFor(1100);
 
         const navigation = page.getByRole('navigation', { name: 'Game stations' });
+        const guestsTab = navigation.getByRole('button', { name: /^Guests/ });
+        const servicesTab = navigation.getByRole('button', { name: /^Services/ });
+        const suppliesTab = navigation.getByRole('button', { name: /^Supplies/ });
+        await expect(guestsTab).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('#services-panel')).toBeHidden();
+        await expect(page.locator('#supply-station')).toBeHidden();
+        expect(await navigation.evaluate(nav => Math.abs(nav.getBoundingClientRect().bottom - window.innerHeight))).toBeLessThanOrEqual(1);
+
         await page.locator('#guest-1 .guest').tap();
-        await navigation.getByRole('link', { name: 'Services' }).tap();
+        await expect(servicesTab).toHaveAttribute('aria-pressed', 'true');
+        await expect(page.locator('#guest-station')).toBeHidden();
         await expect(page.locator('#shower-1')).toHaveClass(/tap-target/);
         await page.locator('#shower-1').tap();
         await expect(page.locator('#shower-1')).toContainText('Showering');
         await expect(page.locator('#shower-1 .sprite--shower')).toHaveCSS('animation-name', 'none');
 
-        await navigation.getByRole('link', { name: 'Supplies' }).tap();
+        await suppliesTab.tap();
         await page.getByRole('button', { name: 'Accept Donations' }).tap();
         await page.locator('#supply-1').tap();
+        await guestsTab.tap();
+        await expect(page.locator('#supply-station')).toBeHidden();
+        await suppliesTab.tap();
         await expect(page.locator('#supply-1')).toHaveAttribute('aria-pressed', 'true');
         await page.getByRole('button', { name: 'Toothbrush bin' }).tap();
         await expect(page.locator('#toothbrush-stock')).toHaveText('3');
@@ -198,13 +214,26 @@ test.describe('Touch gameplay', () => {
         await expectNoHorizontalOverflow(page);
     });
 
-    test('reflows in landscape and keeps every station reachable', async ({ page }) => {
-        await page.setViewportSize({ width: 844, height: 390 });
+    test('keeps the selected panel and shift progress when the phone rotates', async ({ page }) => {
         await openGame(page);
         await startGame(page);
-        for (const id of ['guest-station', 'shower-station', 'laundry-station', 'supply-station']) {
-            await expect(page.locator('#' + id)).toBeVisible();
-        }
+        const navigation = page.getByRole('navigation', { name: 'Game stations' });
+        await navigation.getByRole('button', { name: /^Supplies/ }).tap();
+        await page.getByRole('button', { name: 'Accept Donations' }).tap();
+
+        await page.setViewportSize({ width: 844, height: 390 });
+        await expect(page.locator('#supply-station')).toBeVisible();
+        await expect(page.locator('#supply-1')).toBeVisible();
+        await expect(page.locator('#guest-station')).toBeHidden();
+        await page.getByRole('button', { name: 'Pause' }).tap();
+        await expect(page.getByRole('dialog', { name: 'Shift paused' })).toBeVisible();
+        await page.getByRole('button', { name: 'Resume shift' }).tap();
+        await navigation.getByRole('button', { name: /^Services/ }).tap();
+        await expect(page.locator('#supply-station')).toBeHidden();
+        await expect(page.locator('#shower-station')).toBeVisible();
+        await expect(page.locator('#laundry-station')).toBeVisible();
+        await navigation.getByRole('button', { name: /^Guests/ }).tap();
+        await expect(page.locator('#guest-1')).toBeVisible();
         await expectNoHorizontalOverflow(page);
     });
 });

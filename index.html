@@ -100,15 +100,25 @@
                         <progress id="stress-bar" value="0" max="100" aria-labelledby="stress-label">0%</progress>
                     </div>
                 </div>
+                <button type="button" class="button button-quiet" id="landscape-pause">Pause</button>
                 <nav class="board-navigation" aria-label="Game stations">
-                    <a href="#guest-station">Guests <span id="guest-count">0</span></a>
-                    <a href="#shower-station">Services <span id="clean-count" hidden>0</span></a>
-                    <a href="#supply-station">Supplies <span id="drop-count">0</span></a>
+                    <button type="button" aria-controls="guest-station" aria-pressed="true">
+                        <img src="assets/guest-welcome.webp" alt="" width="26" height="26">
+                        <span>Guests <span id="guest-count" class="station-badge">0</span></span>
+                    </button>
+                    <button type="button" aria-controls="services-panel" aria-pressed="false">
+                        <img src="assets/laundry.webp" alt="" width="26" height="26">
+                        <span>Services <span id="clean-count" class="station-badge" hidden>0</span></span>
+                    </button>
+                    <button type="button" aria-controls="supply-station" aria-pressed="false">
+                        <img src="assets/donations.webp" alt="" width="26" height="26">
+                        <span>Supplies <span id="drop-count" class="station-badge">0</span></span>
+                    </button>
                 </nav>
             </div>
 
             <div id="game-container" class="game-container">
-                <section id="guest-station" class="station guest-station" aria-labelledby="guest-title">
+                <section id="guest-station" class="station guest-station active-panel" aria-labelledby="guest-title">
                     <div class="station-heading">
                         <img src="assets/guest-welcome.webp" alt="" width="54" height="54">
                         <div><h2 id="guest-title" tabindex="-1">Guests</h2><p>Help each guest with their next step.</p></div>
@@ -117,7 +127,7 @@
                     <p id="guest-empty" class="empty-message">The queue is clear. Guests will arrive soon.</p>
                 </section>
 
-                <div class="services">
+                <div id="services-panel" class="services">
                     <section id="shower-station" class="station" aria-labelledby="shower-title">
                         <div class="station-heading">
                             <img src="assets/shower.webp" alt="" width="54" height="54">

@@ -43,6 +43,9 @@ const API = 'https://script.google.com/macros/s/AKfycbzkQztKIezgMgpjqRBAyFstUFmk
 const help = byId('help-modal');
 const leaderboard = byId('leaderboard-modal');
 const gameOver = byId('game-over-modal');
+const board = byId('game-container');
+const stationButtons = document.querySelectorAll('.board-navigation button');
+const mobileBoard = matchMedia('(max-width: 980px)');
 const guestQueue = byId('guest-queue');
 const dropArea = byId('supply-drop-area');
 const bins = byId('supply-bins');
@@ -83,6 +86,22 @@ function difficulty() {
     return Math.floor(game.served / 7);
 }
 
+function showStation(panelId, reveal = true) {
+    for (const panel of board.children) {
+        panel.classList.toggle('active-panel', panel.id === panelId);
+    }
+    for (const button of stationButtons) {
+        const active = button.getAttribute('aria-controls') === panelId;
+        button.setAttribute('aria-pressed', String(active));
+        if (active && reveal) button.focus({ preventScroll: true });
+    }
+    if (reveal) board.scrollIntoView({ block: 'start' });
+}
+
+for (const button of stationButtons) {
+    button.addEventListener('click', () => showStation(button.getAttribute('aria-controls')));
+}
+
 function startGame() {
     gameOver.close();
     game = {
@@ -106,6 +125,7 @@ function startGame() {
     byId('welcome').hidden = true;
     byId('shift').hidden = false;
     byId('help-btn').hidden = false;
+    showStation('guest-station', false);
     guestQueue.replaceChildren();
     dropArea.replaceChildren();
     renderEquipment();
@@ -564,7 +584,13 @@ guestQueue.addEventListener('click', event => {
         game.selectedGuest = game.selectedGuest === guest.id ? null : guest.id;
         renderGuests();
         updateEquipmentTargets();
-        if (game.selectedGuest) announce(`${guest.profile.name} selected. Choose an available station.`);
+        if (game.selectedGuest) {
+            if (mobileBoard.matches) {
+                showStation('services-panel');
+                if (guest.state !== 'shower') byId('laundry-station').scrollIntoView({ block: 'nearest' });
+            }
+            announce(`${guest.profile.name} selected. Choose an available station.`);
+        }
     }
 });
 
@@ -652,7 +678,9 @@ scoreForm.addEventListener('submit', async event => {
 
 byId('start-game-btn').addEventListener('click', startGame);
 byId('restart-game-btn').addEventListener('click', startGame);
-byId('help-btn').addEventListener('click', () => help.showModal());
+for (const id of ['help-btn', 'landscape-pause']) {
+    byId(id).addEventListener('click', () => help.showModal());
+}
 byId('leaderboard-btn').addEventListener('click', () => {
     leaderboard.showModal();
     fetchLeaderboard();
