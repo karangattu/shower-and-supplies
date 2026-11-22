@@ -1,41 +1,21 @@
-# Shower & Supplies Game
+# Shower & Supplies
 
-A web-based game inspired by the real-life operations of Hope's Corner, where you manage a shower, laundry, and supplies for guests in need. Adapt to daily events, keep stress low, and serve as many guests as possible!
+Run a volunteer shift in a browser game inspired by [Hope’s Corner’s Shower & Laundry Program](https://www.hopes-corner.org/shower-laundry-program). Help guests get a shower, wash and dry their laundry, and give them the supplies they request.
 
-## Gameplay
+## Play
 
-- **Accept Supply Drops:** Click "Accept Donations" to receive new items, then drag them to the correct supply bins.
-- **Manage Guests:** Drag waiting guests (😊) to available shower stalls or laundry machines as needed.
-- **Laundry Service:** Some guests will need to use the laundry. Drag guests waiting for laundry (🫧 for washing, 🔥 for drying) to the appropriate machine. After washing, move them to the dryer. Once laundry is done, fulfill their item requests.
-- **Clean Showers & Laundry Machines:** Click dirty showers (🧹) or laundry machines to clean them and make them available again.
-- **Fulfill Requests:** After showering or laundry, guests will request specific items. Click the requested item icon to give it to them (if you have it in stock).
-- **Call Volunteers:** When overwhelmed, click "Call Volunteers" (costs 50 points) to instantly clean all dirty showers and laundry machines, auto-sort all unsorted supplies, and reduce stress for a short time. Volunteers can only be called when you have enough points and are not already active.
-- **Watch Out:** Serve guests before they become upset (😠). Keep an eye on the stress bar and daily events for new challenges.
+- Use the action on a guest’s card to start their next service. You can also select the guest and then select a station, or drag the guest on a laptop.
+- Clean a stall or machine after each use. Once a guest is ready for supplies, select each requested item on their card.
+- Accept donations and select an item, then select its matching bin. Dragging items to bins also works.
+- Spend 50 points to call volunteers. They clean stations, sort donations, and reduce stress.
+- Use **Pause** for a break or to review the controls. The shift ends at 100% stress or when five guests leave after waiting too long.
 
-## Features
+The game animates active equipment and volunteers. It shows still frames when reduced motion is enabled on your device.
 
-- Dynamic daily events that change gameplay (e.g., rain, supply shortages, bonus points).
-- Combo/streak system for efficient play.
-- Drag-and-drop interface for supplies, guests, and laundry.
-- Progress bars for stress, guest patience, showering, laundry, and cleaning.
-- Sound effects and visual feedback.
-- **Laundry Feature:** Guests may require laundry service. Assign them to the washer, then the dryer, before fulfilling their requests. Laundry machines can become dirty and need cleaning, just like showers.
-- **Volunteers Needed Feature:** Call in volunteers to help when things get tough. Volunteers instantly clean all dirty showers and laundry machines, auto-sort all unsorted supplies, and reduce your stress for 8 seconds. The button is disabled while volunteers are active or if you don't have enough points.
+## Run locally
 
-## How to Play
-
-1. Start the day and read the daily update for special events.
-2. Accept and sort supply drops to stock your inventory.
-3. Drag guests to showers or laundry machines and clean stalls/machines as needed.
-4. Fulfill guest requests for supplies after their shower or laundry.
-5. Call volunteers if you get overwhelmed!
-6. Try to keep stress low and avoid upsetting too many guests!
+Use `npm ci` to install the test dependencies. Run `node tests/static-server.js` and open [the local game](http://127.0.0.1:41731). To run the Playwright tests, install Chromium with `npx playwright install chromium`, then run `npm test`.
 
 ## Credits
 
-- Game design and code: Karan
-- Inspired by the work of Hope's Corner
-
----
-
-*This project is for educational and demonstration purposes.*
+Game design and code by Karan. The illustrations and sprites in [assets](assets/) were made for this game with ImageGen. The [art prompts](assets/art-prompts.md) document each illustration. The Hope’s Corner logo comes from the organization. This game is for educational and demonstration purposes.
