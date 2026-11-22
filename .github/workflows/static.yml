@@ -12,21 +12,21 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: "pages"
+  group: ${{ github.ref == 'refs/heads/main' && 'pages' || github.ref }}
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: playwright-tests
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,8 +46,8 @@ jobs:
         uses: actions/deploy-pages@v4
 
   playwright-tests:
-    needs: deploy
-    runs-on: ubuntu-latest
+    # Playwright 1.53 supports Ubuntu 24.04.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,17 +58,13 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: |
-          npm ci || npm install
+        run: npm ci
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Install Chromium and browser dependencies
+        run: npx playwright install --with-deps chromium
 
-      - name: Run Playwright tests against deployed site
-        # env:
-        #   BASE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          npm run test
+      - name: Run Playwright tests
+        run: npm test -- --reporter=line,html
 
       - name: Upload Playwright test results
         if: always()
