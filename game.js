@@ -39,7 +39,9 @@ const SERVICE_INFO = {
 };
 const MAX_GUESTS_LEFT = 5;
 const VOLUNTEER_COST = 50;
-const API = 'https://script.google.com/macros/s/AKfycbzkQztKIezgMgpjqRBAyFstUFmkctO_cV2KYpulTEw-vCM3C_OgBqp0OBmMvbALkrln/exec';
+const SUPABASE_URL = 'https://ovwktjjeoowlktdfbuuu.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_B2pz5WTA3UEVUeKACIgmBw_8_r0S3kU';
+const LEADERBOARD_URL = `${SUPABASE_URL}/rest/v1/${encodeURIComponent('showers and supplies')}`;
 const help = byId('help-modal');
 const leaderboard = byId('leaderboard-modal');
 const gameOver = byId('game-over-modal');
@@ -627,20 +629,22 @@ async function fetchLeaderboard() {
     const container = byId('leaderboard-table-container');
     container.textContent = 'Loading scores…';
     try {
-        const response = await fetch(`${API}?action=get`);
+        const response = await fetch(`${LEADERBOARD_URL}?select=player_name,score&order=score.desc,created_at.asc,id.asc&limit=5`, {
+            headers: { apikey: SUPABASE_PUBLISHABLE_KEY }
+        });
         if (!response.ok) throw new Error('Leaderboard request failed');
-        const result = await response.json();
-        if (!result.success || !Array.isArray(result.data)) throw new Error('Unexpected leaderboard data');
-        if (result.data.length === 0) {
+        const scores = await response.json();
+        if (!Array.isArray(scores)) throw new Error('Unexpected leaderboard data');
+        if (scores.length === 0) {
             container.textContent = 'No scores yet.';
             return;
         }
         const table = document.createElement('table');
         table.innerHTML = '<thead><tr><th scope="col">Name</th><th scope="col">Score</th></tr></thead>';
         const body = table.createTBody();
-        for (const entry of result.data.slice(0, 5)) {
+        for (const entry of scores) {
             const row = body.insertRow();
-            row.insertCell().textContent = entry.playerName || 'Anonymous';
+            row.insertCell().textContent = entry.player_name || 'Anonymous';
             row.insertCell().textContent = Number.parseInt(entry.score, 10) || 0;
         }
         container.replaceChildren(table);
@@ -652,6 +656,7 @@ async function fetchLeaderboard() {
 scoreForm.addEventListener('submit', async event => {
     event.preventDefault();
     const button = scoreForm.querySelector('button');
+    if (button.disabled) return;
     const name = byId('player-name').value.trim();
     if (!name) {
         byId('score-feedback').textContent = 'Enter a name to save your score.';
@@ -662,11 +667,17 @@ scoreForm.addEventListener('submit', async event => {
     button.disabled = true;
     byId('score-feedback').textContent = 'Saving score…';
     try {
-        const response = await fetch(API, {
-            method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'submit', playerName: name, score: completedGame.score })
+        completedGame.leaderboardId ??= crypto.randomUUID();
+        const response = await fetch(`${LEADERBOARD_URL}?on_conflict=id`, {
+            method: 'POST',
+            headers: {
+                apikey: SUPABASE_PUBLISHABLE_KEY,
+                'Content-Type': 'application/json',
+                Prefer: 'resolution=ignore-duplicates,return=minimal'
+            },
+            body: JSON.stringify({ id: completedGame.leaderboardId, player_name: name, score: completedGame.score })
         });
-        if (!response.ok || !(await response.json()).success) throw new Error('Score request failed');
+        if (!response.ok) throw new Error('Score request failed');
         if (game === completedGame) byId('score-feedback').textContent = 'Score saved to the leaderboard.';
     } catch {
         if (game === completedGame) {

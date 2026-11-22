@@ -1,5 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
+const leaderboardRequest = url => url.origin === 'https://ovwktjjeoowlktdfbuuu.supabase.co' &&
+    url.pathname === '/rest/v1/showers%20and%20supplies';
+
 test.beforeEach(async ({ page }) => {
     await page.route('https://**/*', route => route.abort());
     await page.clock.install();
@@ -108,9 +111,16 @@ test('supports guest and donation drag and drop', async ({ page }) => {
 });
 
 test('pauses cycle and patience timers while help or scores are open', async ({ page }) => {
-    await page.route('https://script.google.com/**', route => route.fulfill({
-        json: { success: true, data: [{ playerName: 'Alex', score: 350 }] }
-    }));
+    await page.route(leaderboardRequest, route => {
+        const request = route.request();
+        const query = new URL(request.url()).searchParams;
+        expect(request.method()).toBe('GET');
+        expect(request.headers().apikey).toMatch(/^sb_publishable_/);
+        expect(query.get('select')).toBe('player_name,score');
+        expect(query.get('order')).toBe('score.desc,created_at.asc,id.asc');
+        expect(query.get('limit')).toBe('5');
+        return route.fulfill({ json: [{ player_name: 'Alex', score: 350 }] });
+    });
     await openGame(page, 0.15);
     await startGame(page);
 
@@ -146,11 +156,16 @@ test('pauses cycle and patience timers while help or scores are open', async ({ 
     await expect(page.locator('#score')).toHaveText('50');
 });
 
-test('allows voluntary score submission and starts a fresh shift', async ({ page }) => {
-    let submitted;
-    await page.route('https://script.google.com/**', route => {
-        submitted = route.request().postDataJSON();
-        return route.fulfill({ json: { success: true } });
+test('retries a voluntary score submission without duplicating it and starts a fresh shift', async ({ page }) => {
+    const submissions = [];
+    await page.route(leaderboardRequest, route => {
+        const request = route.request();
+        expect(request.method()).toBe('POST');
+        expect(request.headers().apikey).toMatch(/^sb_publishable_/);
+        expect(request.headers().prefer).toContain('resolution=ignore-duplicates');
+        expect(new URL(request.url()).searchParams.get('on_conflict')).toBe('id');
+        submissions.push(request.postDataJSON());
+        return route.fulfill({ status: submissions.length === 1 ? 503 : 201, body: '' });
     });
     await openGame(page);
     await startGame(page);
@@ -162,11 +177,16 @@ test('allows voluntary score submission and starts a fresh shift', async ({ page
     const summary = page.getByRole('dialog', { name: 'Shift complete' });
     await expect(summary).toBeVisible();
     await expect(summary.locator('#final-score')).toHaveText('15');
-    expect(submitted).toBeUndefined();
+    expect(submissions).toHaveLength(0);
     await summary.getByRole('textbox', { name: 'Name for the leaderboard' }).fill('Alex');
-    await summary.getByRole('button', { name: 'Save score' }).click();
+    const save = summary.getByRole('button', { name: 'Save score' });
+    await save.click();
+    await expect(summary.getByRole('status')).toHaveText('Couldn’t save your score. Try again.');
+    await save.click();
     await expect(summary.getByRole('status')).toHaveText('Score saved to the leaderboard.');
-    expect(submitted).toEqual({ action: 'submit', playerName: 'Alex', score: 15 });
+    expect(submissions).toHaveLength(2);
+    expect(submissions[0]).toEqual({ id: expect.stringMatching(/^[0-9a-f-]{36}$/), player_name: 'Alex', score: 15 });
+    expect(submissions[1]).toEqual(submissions[0]);
 
     await summary.getByRole('button', { name: 'Play Again' }).click();
     await expect(summary).toBeHidden();
