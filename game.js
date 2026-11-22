@@ -19,7 +19,19 @@ const DAILY_EVENTS = [
     { art: 'laundry', text: 'Word got out about free laundry. More guests need a wash.', laundryChance: 2 },
     { art: 'tools', text: 'The laundry machines need maintenance. Cycles take longer.', laundrySpeed: 0.6 }
 ];
-const PORTRAITS = ['guest-welcome', 'guest-beanie', 'guest-glasses'];
+const GUEST_PROFILES = [
+    { name: 'Maya', portrait: 'guest-welcome' },
+    { name: 'Rosa', portrait: 'guest-rosa', supplies: ['jackets'] },
+    { name: 'Dante', portrait: 'guest-dante', supplies: ['razor'], suppliesOnly: true },
+    { name: 'Eli', portrait: 'guest-beanie' },
+    { name: 'Samira', portrait: 'guest-samira', supplies: ['pants'], laundryChance: 0.6 },
+    { name: 'Noah', portrait: 'guest-noah', supplies: ['toothbrush'] },
+    { name: 'Teresa', portrait: 'guest-teresa', supplies: ['sleepingBags'], suppliesOnly: true },
+    { name: 'Lin', portrait: 'guest-glasses' },
+    { name: 'Julián', portrait: 'guest-julian', supplies: ['shoes'] },
+    { name: 'Nico', portrait: 'guest-nico', supplies: ['shirts'], laundryChance: 0.6 },
+    { name: 'Marisol', portrait: 'guest-marisol', supplies: ['shirts', 'pants'] }
+];
 const SERVICE_INFO = {
     shower: { label: 'Needs a shower', action: 'Start shower', unavailable: 'Waiting for a stall', busy: 'Showering' },
     washer: { label: 'Needs a wash', action: 'Start wash', unavailable: 'Waiting for washer', busy: 'Washing' },
@@ -160,21 +172,38 @@ function tick(elapsed) {
 }
 
 function spawnGuest() {
+    const number = game.nextGuestId;
+    const profile = GUEST_PROFILES[(number - 1) % GUEST_PROFILES.length];
     const active = [...game.guests.values()].filter(guest => guest.state !== 'requesting' && guest.state !== 'dryer');
-    if (active.length >= 5) {
+    if (!profile.suppliesOnly && active.length >= 5) {
         game.nextGuestAt = game.time + 1500;
         return;
     }
-    const number = game.nextGuestId++;
-    const guest = {
-        id: `guest-${number}`, number,
-        state: Math.random() < 0.2 * (game.event.laundryChance ?? 1) ? 'washer' : 'shower'
-    };
+    game.nextGuestId++;
+    const guest = { id: `guest-${number}`, profile };
+    if (profile.suppliesOnly) {
+        requestSupplies(guest);
+    } else {
+        const laundryChance = (profile.laundryChance ?? 0.2) * (game.event.laundryChance ?? 1);
+        guest.state = Math.random() < laundryChance ? 'washer' : 'shower';
+    }
     resetWait(guest);
     game.guests.set(guest.id, guest);
     const arrival = (3750 + 1500 * Math.random()) * Math.max(0.3, 1 - 0.07 * difficulty());
     game.nextGuestAt = game.time + arrival / (game.event.arrivalSpeed ?? 1) * (game.served >= 6 ? 1.3 : 1);
     renderGuests();
+}
+
+function requestSupplies(guest) {
+    guest.state = 'requesting';
+    if (guest.profile.supplies) {
+        guest.requests = new Set(guest.profile.supplies);
+        return;
+    }
+
+    const types = Object.keys(ITEM_TYPES);
+    const count = Math.random() < Math.min(0.8, 0.2 + 0.08 * difficulty()) ? 2 : 1;
+    guest.requests = new Set(Array.from({ length: count }, () => types[Math.floor(Math.random() * types.length)]));
 }
 
 function resetWait(guest) {
@@ -191,7 +220,7 @@ function startService(guestId, unit) {
     const base = { shower: 10000, washer: 12000, dryer: 8000 }[unit.type];
     const speed = unit.type === 'shower' ? game.event.showerSpeed : game.event.laundrySpeed;
     startEquipment(unit, 'occupied', base * (1 + 0.06 * difficulty()) / (speed ?? 1));
-    announce(`Guest ${guest.number} is using the ${unit.name.toLowerCase()}.`);
+    announce(`${guest.profile.name} is using the ${unit.name.toLowerCase()}.`);
     playSound(true);
     if (unit.type === 'shower') analytics('assign_guest_to_shower');
     else analytics('assign_guest_to_laundry', { machine: unit.type === 'washer' ? 'wash' : 'dry' });
@@ -218,10 +247,7 @@ function finishEquipment(unit) {
         if (unit.type === 'washer') {
             guest.state = 'dryer';
         } else {
-            guest.state = 'requesting';
-            const types = Object.keys(ITEM_TYPES);
-            const count = Math.random() < Math.min(0.8, 0.2 + 0.08 * difficulty()) ? 2 : 1;
-            guest.requests = new Set(Array.from({ length: count }, () => types[Math.floor(Math.random() * types.length)]));
+            requestSupplies(guest);
             game.score += unit.type === 'shower' ? 50 : 75;
         }
     }
@@ -284,9 +310,9 @@ function fulfillRequest(guest, type) {
     if (guest.requests.size === 0) {
         game.guests.delete(guest.id);
         game.served++;
-        announce(`Guest ${guest.number} has everything they need.`);
+        announce(`${guest.profile.name} has everything they need.`);
     } else {
-        announce(`${ITEM_TYPES[type].name} given to Guest ${guest.number}.`);
+        announce(`${ITEM_TYPES[type].name} given to ${guest.profile.name}.`);
     }
     const hadFocus = byId(guest.id).contains(document.activeElement);
     renderGuests();
@@ -416,14 +442,14 @@ function renderGuests() {
             guestQueue.append(card);
         }
         const service = SERVICE_INFO[guest.state];
-        const portrait = PORTRAITS[(guest.number - 1) % PORTRAITS.length];
+        const { name, portrait } = guest.profile;
         const selected = game.selectedGuest === guest.id;
         card.className = `guest-card${selected ? ' selected' : ''}`;
         const requestKey = guest.requests ? [...guest.requests].join(' ') : '';
         if (card.dataset.state !== guest.state || card.dataset.items !== requestKey) {
             card.dataset.state = guest.state;
             card.dataset.items = requestKey;
-            const identity = `${art(portrait, 42)}<span><strong>Guest ${guest.number}</strong><small>${service?.label ?? 'Needs supplies'}</small></span>`;
+            const identity = `${art(portrait, 42)}<span><strong>${name}</strong><small>${service?.label ?? 'Needs supplies'}</small></span>`;
             card.innerHTML = service
                 ? `<button type="button" class="guest guest-identity" draggable="true">${identity}</button>
                    <button type="button" class="guest-action"></button>`
@@ -433,7 +459,7 @@ function renderGuests() {
                            ${art(ITEM_TYPES[type].art, 27)}<span>${ITEM_TYPES[type].name}</span>
                        </button>`).join('')}</div>`;
             card.insertAdjacentHTML('beforeend', `
-                <progress class="patience-meter" value="${guest.waitLeft / guest.waitMax * 100}" max="100" aria-label="Guest ${guest.number} patience"></progress>`);
+                <progress class="patience-meter" value="${guest.waitLeft / guest.waitMax * 100}" max="100" aria-label="${name} patience"></progress>`);
         }
         if (service) {
             const action = card.querySelector('.guest-action');
@@ -538,7 +564,7 @@ guestQueue.addEventListener('click', event => {
         game.selectedGuest = game.selectedGuest === guest.id ? null : guest.id;
         renderGuests();
         updateEquipmentTargets();
-        if (game.selectedGuest) announce(`Guest ${guest.number} selected. Choose an available station.`);
+        if (game.selectedGuest) announce(`${guest.profile.name} selected. Choose an available station.`);
     }
 });
 
