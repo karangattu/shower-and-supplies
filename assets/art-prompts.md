@@ -68,3 +68,22 @@ Use case: precise-object-edit. Correct the spray direction on this exact four-fr
 ```
 
 
+
+## Additional guest portraits
+
+The eight portraits used the existing Maya portrait as a style and framing reference with ImageGen’s transparent background option enabled.
+
+```text
+Use case: stylized-concept. An original bust portrait for a character in the browser game Shower & Supplies. Use the supplied existing guest sprite as a reference for the framing and gouache style only. Depict a different fictional adult with the features below, centered and filling a clearly defined circular backdrop, with dark navy contours, warm editorial gouache texture, and a relaxed, dignified expression. Frame shoulders and full head, with a clear silhouette and facial features at a 42 px display size. Square canvas, true transparency outside the circle, plain softly textured circular backdrop, no scenery, no lettering, no watermark.
+```
+
+| Asset | Subject |
+| --- | --- |
+| `guest-rosa.webp` | Rosa, a middle-aged Latina woman with warm tan skin, short wavy dark brown hair with a few silver strands and an ochre scarf over a dark teal jacket. Dusty apricot circular backdrop. |
+| `guest-dante.webp` | Dante, a smiling older Afro-Dominican man with deep brown skin, a salt-and-pepper beard, close-cropped hair, a maroon jacket, and a cream crew-neck shirt. Muted turquoise circular backdrop. |
+| `guest-samira.webp` | Samira, a woman in her thirties with rich brown skin, a dark plum headscarf, and a muted olive sweater. Warm pale gold circular backdrop. |
+| `guest-noah.webp` | Noah, a fair-skinned young adult with a freckled face, copper curls under a dusty blue baseball cap and a rust red crewneck. Muted sage circular backdrop. |
+| `guest-teresa.webp` | Teresa, an older Colombian American woman with light olive skin, silver braids under a mustard knit beanie, and a rust-orange coat. Dusky periwinkle circular backdrop. |
+| `guest-julian.webp` | Julián, a young Puerto Rican adult with medium tan skin, a close-cropped lavender haircut, round teal glasses, and a navy-and-cream striped shirt. Pale peach circular backdrop. |
+| `guest-nico.webp` | Nico, a young Mexican American adult with medium brown skin, loose dark curls, black rectangular glasses, and a sage green hoodie. Muted terracotta circular backdrop. |
+| `guest-marisol.webp` | Marisol, a middle-aged Salvadoran American woman with warm brown skin, thick shoulder-length wavy dark hair tied back with a pale blue bandana, and a brick cardigan. Soft pale green circular backdrop. |

@@ -66,6 +66,31 @@ test('plays a shower, cleans the stall, and fills a request on a laptop', async 
     await expectNoHorizontalOverflow(page);
 });
 
+test('serves a supplies-only guest and a guest with a specific request', async ({ page }) => {
+    await openGame(page);
+    await startGame(page);
+    await page.clock.runFor(4600);
+
+    const rosa = page.locator('#guest-2');
+    await expect(rosa).toContainText('Rosa');
+    await rosa.getByRole('button', { name: 'Start shower' }).click();
+    await page.clock.runFor(4600);
+
+    const dante = page.locator('#guest-3');
+    await expect(dante).toContainText('Dante');
+    await expect(dante).toContainText('Needs supplies');
+    await expect(dante.locator('.guest-action')).toHaveCount(0);
+    await dante.getByRole('button', { name: 'Give Razor' }).click();
+    await expect(dante).toHaveCount(0);
+    await expect(page.locator('#razor-stock')).toHaveText('0');
+
+    await page.clock.runFor(5700);
+    await rosa.getByRole('button', { name: 'Give Jacket' }).click();
+    await expect(rosa).toHaveCount(0);
+    await expect(page.locator('#served')).toHaveText('2');
+    await expect(page.locator('#score')).toHaveText('130');
+});
+
 test('supports guest and donation drag and drop', async ({ page }) => {
     await openGame(page);
     await startGame(page);

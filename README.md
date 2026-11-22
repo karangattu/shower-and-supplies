@@ -5,7 +5,7 @@ Run a volunteer shift in a browser game inspired by [Hope’s Corner’s Shower 
 ## Play
 
 - Use the action on a guest’s card to start their next service. You can also select the guest and then select a station, or drag the guest on a laptop.
-- Clean a stall or machine after each use. Once a guest is ready for supplies, select each requested item on their card.
+- Clean a stall or machine after each use. Some guests come straight for supplies. Select each requested item on their card.
 - Accept donations and select an item, then select its matching bin. Dragging items to bins also works.
 - Spend 50 points to call volunteers. They clean stations, sort donations, and reduce stress.
 - Use **Pause** for a break or to review the controls. The shift ends at 100% stress or when five guests leave after waiting too long.
